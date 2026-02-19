@@ -41,9 +41,12 @@ origins = [
     "http://localhost:3000",
     "http://127.0.0.1:3000",
     "https://tournament-web.onrender.com",
+    "https://badminton-fme6.onrender.com",
 ]
 if os.environ.get("FRONTEND_ORIGIN"):
-    origins.append(os.environ["FRONTEND_ORIGIN"].rstrip("/"))
+    extra = os.environ["FRONTEND_ORIGIN"].strip().rstrip("/")
+    if extra and extra not in origins:
+        origins.append(extra)
 
 app.add_middleware(
     CORSMiddleware,

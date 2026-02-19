@@ -1,5 +1,6 @@
 const API_URL = process.env.NEXT_PUBLIC_API_URL || "";
-const API_TIMEOUT_MS = 10000; // 10 seconds – avoid hanging if API is down
+// 65s so Render free-tier cold start (~30–60s) can finish
+const API_TIMEOUT_MS = 65000;
 
 async function fetchWithTimeout(url: string, options: RequestInit = {}): Promise<Response> {
   if (!url.startsWith("http")) {
@@ -12,7 +13,7 @@ async function fetchWithTimeout(url: string, options: RequestInit = {}): Promise
     return res;
   } catch (err) {
     if (err instanceof Error && err.name === "AbortError") {
-      throw new Error("Request timed out. Is the API running? (e.g. uvicorn main:app --reload --port 8000)");
+      throw new Error("Request timed out. If the API is on Render free tier, it may be waking up—click Retry in a moment.");
     }
     throw err;
   } finally {
