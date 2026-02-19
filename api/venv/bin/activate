@@ -37,7 +37,7 @@ deactivate () {
 # unset irrelevant variables
 deactivate nondestructive
 
-VIRTUAL_ENV="/Users/letterboxdistribution/badminton club /api/venv"
+VIRTUAL_ENV="/Users/letterboxdistribution/Documents/GitHub/badminton club /api/venv"
 export VIRTUAL_ENV
 
 _OLD_VIRTUAL_PATH="$PATH"

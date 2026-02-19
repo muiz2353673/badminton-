@@ -1,5 +1,5 @@
 #!/bin/sh
-'''exec' "/Users/letterboxdistribution/badminton club /api/venv/bin/python3" "$0" "$@"
+'''exec' "/Users/letterboxdistribution/Documents/GitHub/badminton club /api/venv/bin/python3" "$0" "$@"
 ' '''
 # -*- coding: utf-8 -*-
 import re

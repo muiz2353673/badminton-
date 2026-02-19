@@ -3,7 +3,7 @@ Tournament API – FastAPI backend.
 Uses Supabase (service role) for DB. Run: uvicorn main:app --reload --port 8000
 """
 import os
-from typing import Any
+from typing import Any, Optional
 
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
@@ -22,7 +22,7 @@ app.add_middleware(
 
 url = os.environ.get("SUPABASE_URL")
 key = os.environ.get("SUPABASE_SERVICE_ROLE_KEY")
-supabase: Client | None = create_client(url, key) if url and key else None
+supabase: Optional[Client] = create_client(url, key) if url and key else None
 
 
 class GenerateBracketRequest(BaseModel):
