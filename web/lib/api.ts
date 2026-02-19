@@ -1,4 +1,24 @@
 const API_URL = process.env.NEXT_PUBLIC_API_URL || "";
+const API_TIMEOUT_MS = 10000; // 10 seconds – avoid hanging if API is down
+
+async function fetchWithTimeout(url: string, options: RequestInit = {}): Promise<Response> {
+  if (!url.startsWith("http")) {
+    return fetch(url, options);
+  }
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), API_TIMEOUT_MS);
+  try {
+    const res = await fetch(url, { ...options, signal: controller.signal });
+    return res;
+  } catch (err) {
+    if (err instanceof Error && err.name === "AbortError") {
+      throw new Error("Request timed out. Is the API running? (e.g. uvicorn main:app --reload --port 8000)");
+    }
+    throw err;
+  } finally {
+    clearTimeout(timeout);
+  }
+}
 
 export async function generateBracket(tournamentId: string, event: string, standard: string, ageGroup: string): Promise<{
   message: string;
@@ -6,7 +26,7 @@ export async function generateBracket(tournamentId: string, event: string, stand
   matches_created?: number;
   matches?: unknown[];
 }> {
-  const res = await fetch(`${API_URL}/generate-bracket`, {
+  const res = await fetchWithTimeout(`${API_URL}/generate-bracket`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ tournament_id: tournamentId, event, standard, age_group: ageGroup }),
@@ -28,7 +48,7 @@ export async function getDraws(
   if (event) params.set("event", event);
   if (standard) params.set("standard", standard);
   if (ageGroup) params.set("age_group", ageGroup);
-  const res = await fetch(`${API_URL}/draws?${params}`);
+  const res = await fetchWithTimeout(`${API_URL}/draws?${params}`);
   if (!res.ok) throw new Error("Failed to load draws");
   return res.json();
 }
@@ -54,7 +74,7 @@ export type MatchUpdate = {
 };
 
 export async function updateRegistration(id: string, data: RegistrationUpdate): Promise<{ message: string; registration: unknown }> {
-  const res = await fetch(`${API_URL}/registrations/${id}`, {
+  const res = await fetchWithTimeout(`${API_URL}/registrations/${id}`, {
     method: "PATCH",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(data),
@@ -67,7 +87,7 @@ export async function updateRegistration(id: string, data: RegistrationUpdate): 
 }
 
 export async function deleteRegistration(id: string): Promise<{ message: string; id: string }> {
-  const res = await fetch(`${API_URL}/registrations/${id}`, { method: "DELETE" });
+  const res = await fetchWithTimeout(`${API_URL}/registrations/${id}`, { method: "DELETE" });
   if (!res.ok) {
     const err = await res.json().catch(() => ({ detail: res.statusText }));
     throw new Error(err.detail || "Failed to delete");
@@ -76,7 +96,7 @@ export async function deleteRegistration(id: string): Promise<{ message: string;
 }
 
 export async function updateMatch(id: string, data: MatchUpdate): Promise<{ message: string; match: unknown }> {
-  const res = await fetch(`${API_URL}/matches/${id}`, {
+  const res = await fetchWithTimeout(`${API_URL}/matches/${id}`, {
     method: "PATCH",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(data),
@@ -89,7 +109,7 @@ export async function updateMatch(id: string, data: MatchUpdate): Promise<{ mess
 }
 
 export async function deleteMatch(id: string): Promise<{ message: string; id: string }> {
-  const res = await fetch(`${API_URL}/matches/${id}`, { method: "DELETE" });
+  const res = await fetchWithTimeout(`${API_URL}/matches/${id}`, { method: "DELETE" });
   if (!res.ok) {
     const err = await res.json().catch(() => ({ detail: res.statusText }));
     throw new Error(err.detail || "Failed to delete match");

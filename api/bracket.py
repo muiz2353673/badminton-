@@ -2,8 +2,10 @@
 Single-elimination bracket generation.
 Produces round_order, slot_in_round, and round labels for draw display.
 """
+from __future__ import annotations
+
 import math
-from typing import Any
+from typing import Any, Optional
 
 
 def round_label(round_order: int, total_rounds: int) -> str:
@@ -21,8 +23,8 @@ def round_label(round_order: int, total_rounds: int) -> str:
 def generate_bracket_matches(
     tournament_id: str,
     event: str,
-    standard: str | None,
-    age_group: str | None,
+    standard: Optional[str],
+    age_group: Optional[str],
     registration_rows: list[dict[str, Any]],
 ) -> list[dict[str, Any]]:
     """

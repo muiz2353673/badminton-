@@ -57,6 +57,13 @@ export default function AdminPage() {
   const [editMatchError, setEditMatchError] = useState<string | null>(null);
   const [deletingMatchId, setDeletingMatchId] = useState<string | null>(null);
 
+  const [recordingResultMatch, setRecordingResultMatch] = useState<Match | null>(null);
+  const [resultScore1, setResultScore1] = useState<string>("");
+  const [resultScore2, setResultScore2] = useState<string>("");
+  const [resultWinnerId, setResultWinnerId] = useState<string>("");
+  const [recordResultSaving, setRecordResultSaving] = useState(false);
+  const [recordResultError, setRecordResultError] = useState<string | null>(null);
+
   async function handleLogout() {
     await fetch("/api/auth/admin-logout", { method: "POST" });
     router.push("/admin/login");
@@ -183,6 +190,44 @@ export default function AdminPage() {
       getDraws(manageTournamentId, manageEvent || undefined, manageStandard || undefined, manageAgeGroup || undefined).then((d) => setAdminMatches(d.matches));
     } finally {
       setDeletingMatchId(null);
+    }
+  }
+
+  function openRecordResult(m: Match) {
+    setRecordingResultMatch(m);
+    setResultScore1(m.score1 != null ? String(m.score1) : "");
+    setResultScore2(m.score2 != null ? String(m.score2) : "");
+    setResultWinnerId(m.winner_id ?? "");
+    setRecordResultError(null);
+  }
+
+  async function handleRecordResult() {
+    if (!recordingResultMatch) return;
+    const score1 = resultScore1 === "" ? null : parseInt(resultScore1, 10);
+    const score2 = resultScore2 === "" ? null : parseInt(resultScore2, 10);
+    if (score1 != null && isNaN(score1)) {
+      setRecordResultError("Enter a valid score for player 1");
+      return;
+    }
+    if (score2 != null && isNaN(score2)) {
+      setRecordResultError("Enter a valid score for player 2");
+      return;
+    }
+    setRecordResultError(null);
+    setRecordResultSaving(true);
+    try {
+      await updateMatch(recordingResultMatch.id, {
+        score1: score1 ?? undefined,
+        score2: score2 ?? undefined,
+        winner_id: resultWinnerId || undefined,
+        status: "completed",
+      });
+      setRecordingResultMatch(null);
+      getDraws(manageTournamentId, manageEvent || undefined, manageStandard || undefined, manageAgeGroup || undefined).then((d) => setAdminMatches(d.matches));
+    } catch (e) {
+      setRecordResultError(e instanceof Error ? e.message : "Failed to save result");
+    } finally {
+      setRecordResultSaving(false);
     }
   }
 
@@ -364,7 +409,7 @@ export default function AdminPage() {
 
       <section className="mt-10">
         <h2 className="text-lg font-semibold text-gray-900">Manage draws</h2>
-        <p className="mt-1 text-sm text-gray-600">Edit match scores and winner or delete matches. Only admins can edit draws; the public Draws page is read-only.</p>
+        <p className="mt-1 text-sm text-gray-600">When a match is finished, use &quot;Enter score&quot; to record the result (scores + winner) and mark it completed. You can also Edit or Delete matches.</p>
         <div className="mt-4 flex flex-wrap items-end gap-4">
           <div>
             <label className="mb-1 block text-sm font-medium text-gray-700">Tournament</label>
@@ -411,10 +456,16 @@ export default function AdminPage() {
                   <span className="text-gray-400">vs</span>
                   <span className="text-gray-700">{m.player2_name ?? "—"}</span>
                   {(m.score1 != null || m.score2 != null) && (
-                    <span className="font-mono text-sm text-gray-600">{m.score1 ?? "–"}–{m.score2 ?? "–"}</span>
+                    <span className="font-mono text-sm font-medium text-gray-800">{m.score1 ?? "–"}–{m.score2 ?? "–"}</span>
+                  )}
+                  {m.status === "completed" && (
+                    <span className="rounded-full bg-green-100 px-2 py-0.5 text-xs font-medium text-green-800">Finished</span>
                   )}
                 </div>
-                <div className="flex gap-2">
+                <div className="flex flex-wrap gap-2">
+                  <button type="button" onClick={() => openRecordResult(m)} className="btn-primary text-sm">
+                    {m.status === "completed" ? "Change score" : "Enter score"}
+                  </button>
                   <button type="button" onClick={() => setEditingMatch({ ...m })} className="btn-secondary text-sm">Edit</button>
                   <button type="button" onClick={() => handleDeleteMatch(m.id)} disabled={deletingMatchId === m.id} className="rounded-lg border border-red-200 px-3 py-1.5 text-sm font-medium text-red-600 hover:bg-red-50 disabled:opacity-50">Delete</button>
                 </div>
@@ -423,6 +474,56 @@ export default function AdminPage() {
           </div>
         )}
       </section>
+
+      {/* Record result (enter score) modal */}
+      {recordingResultMatch && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4" onClick={() => !recordResultSaving && setRecordingResultMatch(null)}>
+          <div className="card w-full max-w-md" onClick={(e) => e.stopPropagation()}>
+            <h3 className="text-lg font-semibold text-gray-900">Enter score – match finished</h3>
+            <p className="mt-1 text-sm text-gray-600">{recordingResultMatch.player1_name ?? "—"} vs {recordingResultMatch.player2_name ?? "—"}</p>
+            {recordResultError && <p className="mt-2 text-sm text-red-600">{recordResultError}</p>}
+            <div className="mt-4 space-y-3">
+              <div className="flex items-center gap-4">
+                <div className="flex-1">
+                  <label className="mb-1 block text-sm font-medium text-gray-700">Score ({recordingResultMatch.player1_name ?? "Player 1"})</label>
+                  <input
+                    type="number"
+                    min={0}
+                    value={resultScore1}
+                    onChange={(e) => setResultScore1(e.target.value)}
+                    placeholder="0"
+                    className="w-full"
+                  />
+                </div>
+                <span className="pt-6 text-gray-400">–</span>
+                <div className="flex-1">
+                  <label className="mb-1 block text-sm font-medium text-gray-700">Score ({recordingResultMatch.player2_name ?? "Player 2"})</label>
+                  <input
+                    type="number"
+                    min={0}
+                    value={resultScore2}
+                    onChange={(e) => setResultScore2(e.target.value)}
+                    placeholder="0"
+                    className="w-full"
+                  />
+                </div>
+              </div>
+              <div>
+                <label className="mb-1 block text-sm font-medium text-gray-700">Winner</label>
+                <select value={resultWinnerId} onChange={(e) => setResultWinnerId(e.target.value)} className="w-full">
+                  <option value="">Select winner</option>
+                  {recordingResultMatch.player1_id && <option value={recordingResultMatch.player1_id}>{recordingResultMatch.player1_name ?? "Player 1"}</option>}
+                  {recordingResultMatch.player2_id && <option value={recordingResultMatch.player2_id}>{recordingResultMatch.player2_name ?? "Player 2"}</option>}
+                </select>
+              </div>
+            </div>
+            <div className="mt-6 flex justify-end gap-2">
+              <button type="button" onClick={() => !recordResultSaving && setRecordingResultMatch(null)} className="btn-secondary">Cancel</button>
+              <button type="button" onClick={handleRecordResult} disabled={recordResultSaving} className="btn-primary">{recordResultSaving ? "Saving…" : "Save result"}</button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Edit match modal */}
       {editingMatch && (

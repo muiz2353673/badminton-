@@ -77,6 +77,16 @@ Use the tournament UUID from Supabase (e.g. from the tournaments table). After r
 - Terminal 1: `cd web && npm run dev` (port 3000)  
 - Terminal 2: `cd api && source venv/bin/activate && uvicorn main:app --reload --port 8000` (port 8000)
 
+## 5. Why is it slow? (Render / free tier)
+
+- **Cold starts** – On Render’s free tier, the **backend API sleeps** after ~15 minutes of no traffic. The first request after that can take **30–60 seconds** while the service starts. The frontend (Next.js) may also spin down. That’s the main reason “everything feels slow” after a break.
+- **What helps**
+  - **Keep the API warm**: Use a free cron (e.g. [cron-job.org](https://cron-job.org)) to hit your API’s health URL every 10–15 minutes: `GET https://your-api.onrender.com/health`
+  - **Paid plan**: Render paid services don’t spin down, so the first request is fast.
+  - **Same region**: If you can, put Supabase and Render in the same region to cut database latency.
+
+Bracket generation now uses a **single bulk insert** instead of one insert per match, so generating draws is faster.
+
 ## Stack
 
 - **React** – via Next.js in `web/`.

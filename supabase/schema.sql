@@ -46,6 +46,10 @@ create table if not exists public.matches (
   tournament_id uuid references public.tournaments(id) on delete cascade,
   round text not null,
   event text not null,
+  standard text,
+  age_group text,
+  round_order int,
+  slot_in_round int,
   player1_id uuid references public.registrations(id) on delete set null,
   player2_id uuid references public.registrations(id) on delete set null,
   score1 int,
@@ -63,13 +67,18 @@ alter table public.venues enable row level security;
 alter table public.registrations enable row level security;
 alter table public.matches enable row level security;
 
--- Allow read for all (public site)
+-- Allow read for all (public site) – drop first so re-run is safe
+drop policy if exists "Allow public read tournaments" on public.tournaments;
 create policy "Allow public read tournaments" on public.tournaments for select using (true);
+drop policy if exists "Allow public read venues" on public.venues;
 create policy "Allow public read venues" on public.venues for select using (true);
+drop policy if exists "Allow public read registrations" on public.registrations;
 create policy "Allow public read registrations" on public.registrations for select using (true);
+drop policy if exists "Allow public read matches" on public.matches;
 create policy "Allow public read matches" on public.matches for select using (true);
 
 -- Allow insert for registrations (anyone can register)
+drop policy if exists "Allow insert registrations" on public.registrations;
 create policy "Allow insert registrations" on public.registrations for insert with check (true);
 
 -- Allow all for service role / backend (Python will use service key)

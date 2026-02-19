@@ -18,6 +18,7 @@ export default function DrawsPage() {
   const [matches, setMatches] = useState<Match[]>([]);
   const [loading, setLoading] = useState(true);
   const [loadingDraw, setLoadingDraw] = useState(false);
+  const [drawError, setDrawError] = useState<string | null>(null);
 
   useEffect(() => {
     supabase
@@ -28,12 +29,14 @@ export default function DrawsPage() {
         setTournaments(data ?? []);
         if (data?.length && !tournamentId) setTournamentId(data[0].id);
         setLoading(false);
-      });
+      })
+      .catch(() => setLoading(false));
   }, [tournamentId]);
 
   useEffect(() => {
     if (!tournamentId) return;
     setLoadingDraw(true);
+    setDrawError(null);
     getDraws(tournamentId, eventFilter || undefined, standardFilter || undefined, ageGroupFilter || undefined)
       .then((d) => {
         setMatches(d.matches);
@@ -47,7 +50,11 @@ export default function DrawsPage() {
         if ((d.age_groups?.length ?? 0) > 0 && !ageGroupFilter) setAgeGroupFilter(d.age_groups[0]);
         if ((d.age_groups?.length ?? 0) > 0 && ageGroupFilter && !d.age_groups?.includes(ageGroupFilter)) setAgeGroupFilter(d.age_groups[0]);
       })
-      .catch(() => setMatches([]))
+      .catch((e) => {
+        setMatches([]);
+        const msg = e instanceof Error ? e.message : "Could not load draws. Is the API running?";
+        setDrawError(msg);
+      })
       .finally(() => setLoadingDraw(false));
   }, [tournamentId, eventFilter, standardFilter, ageGroupFilter]);
 
@@ -153,6 +160,14 @@ export default function DrawsPage() {
       {loadingDraw ? (
         <div className="mt-10 flex justify-center py-12">
           <div className="h-8 w-8 animate-spin rounded-full border-2 border-brand border-t-transparent" />
+        </div>
+      ) : drawError ? (
+        <div className="card mt-10 border-amber-200 bg-amber-50 text-center">
+          <p className="font-medium text-amber-800">{drawError}</p>
+          <p className="mt-2 text-sm text-amber-700">
+            Run the API locally: <code className="rounded bg-amber-100 px-1">cd api && source venv/bin/activate && uvicorn main:app --reload --port 8000</code>
+          </p>
+          <p className="mt-1 text-sm text-amber-700">Set <code className="rounded bg-amber-100 px-1">NEXT_PUBLIC_API_URL=http://localhost:8000</code> in <code className="rounded bg-amber-100 px-1">web/.env.local</code></p>
         </div>
       ) : matches.length === 0 ? (
         <div className="card mt-10 text-center">

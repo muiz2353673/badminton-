@@ -106,11 +106,10 @@ def generate_bracket(body: GenerateBracketRequest) -> dict[str, Any]:
     )
 
     match_payloads = generate_bracket_matches(body.tournament_id, body.event, body.standard, body.age_group, rows)
-    inserted = []
-    for payload in match_payloads:
-        ins = supabase.table("matches").insert(payload).execute()
-        if ins.data:
-            inserted.append(ins.data[0])
+    if not match_payloads:
+        return {"message": "Bracket generated", "count": len(rows), "matches_created": 0, "matches": []}
+    ins = supabase.table("matches").insert(match_payloads).execute()
+    inserted = ins.data or []
 
     return {
         "message": "Bracket generated",
