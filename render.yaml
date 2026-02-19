@@ -1,0 +1,30 @@
+# Render Blueprint – frontend (Next.js) + backend (FastAPI).
+# Deploy: Render Dashboard → New → Blueprint → connect this repo.
+# After deploy: set NEXT_PUBLIC_API_URL on the web service to your API URL (e.g. https://tournament-api.onrender.com).
+
+services:
+  - type: web
+    name: tournament-api
+    runtime: python
+    rootDir: api
+    buildCommand: pip install -r requirements.txt
+    startCommand: uvicorn main:app --host 0.0.0.0 --port $PORT
+    envVars:
+      - key: SUPABASE_URL
+        sync: false
+      - key: SUPABASE_SERVICE_ROLE_KEY
+        sync: false
+
+  - type: web
+    name: tournament-web
+    runtime: node
+    rootDir: web
+    buildCommand: npm install && npm run build
+    startCommand: npm run start
+    envVars:
+      - key: NEXT_PUBLIC_SUPABASE_URL
+        sync: false
+      - key: NEXT_PUBLIC_SUPABASE_ANON_KEY
+        sync: false
+      - key: NEXT_PUBLIC_API_URL
+        sync: false
