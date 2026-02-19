@@ -19,6 +19,7 @@ export default function DrawsPage() {
   const [loading, setLoading] = useState(true);
   const [loadingDraw, setLoadingDraw] = useState(false);
   const [drawError, setDrawError] = useState<string | null>(null);
+  const [retryCount, setRetryCount] = useState(0);
 
   useEffect(() => {
     Promise.resolve(
@@ -58,7 +59,7 @@ export default function DrawsPage() {
         setDrawError(msg);
       })
       .finally(() => setLoadingDraw(false));
-  }, [tournamentId, eventFilter, standardFilter, ageGroupFilter]);
+  }, [tournamentId, eventFilter, standardFilter, ageGroupFilter, retryCount]);
 
   const byRound = matches.reduce<Record<number, Match[]>>((acc, m) => {
     const r = m.round_order ?? 0;
@@ -166,7 +167,17 @@ export default function DrawsPage() {
       ) : drawError ? (
         <div className="card mt-10 border-amber-200 bg-amber-50 text-center">
           <p className="font-medium text-amber-800">{drawError}</p>
-          <p className="mt-2 text-sm text-amber-700">
+          <p className="mt-2 text-xs text-amber-600">
+            API URL: {process.env.NEXT_PUBLIC_API_URL || "not set"}
+          </p>
+          <button
+            type="button"
+            onClick={() => setRetryCount((c) => c + 1)}
+            className="btn-primary mt-4"
+          >
+            Retry
+          </button>
+          <p className="mt-4 text-sm text-amber-700">
             <strong>Local:</strong> Run the API with <code className="rounded bg-amber-100 px-1">cd api && source venv/bin/activate && uvicorn main:app --reload --port 8000</code> and set <code className="rounded bg-amber-100 px-1">NEXT_PUBLIC_API_URL=http://localhost:8000</code> in <code className="rounded bg-amber-100 px-1">web/.env.local</code>.
           </p>
           <p className="mt-1 text-sm text-amber-700">
