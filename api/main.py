@@ -158,9 +158,11 @@ def generate_bracket(body: GenerateBracketRequest) -> dict[str, Any]:
 
     if _is_doubles_event(body.event):
         pairs = _form_pairs(rows)
-        if len(pairs) < 2:
-            return {"message": "Not enough pairs (set partner for each player in Admin)", "count": len(pairs), "matches_created": 0, "matches": []}
-        match_payloads = generate_bracket_matches_doubles(body.tournament_id, body.event, body.standard, body.age_group, pairs)
+        if len(pairs) >= 2:
+            match_payloads = generate_bracket_matches_doubles(body.tournament_id, body.event, body.standard, body.age_group, pairs)
+        else:
+            # No linked pairs yet: generate bracket with each player as single entry (partner ids null)
+            match_payloads = generate_bracket_matches(body.tournament_id, body.event, body.standard, body.age_group, rows)
     else:
         match_payloads = generate_bracket_matches(body.tournament_id, body.event, body.standard, body.age_group, rows)
 
@@ -177,6 +179,44 @@ def generate_bracket(body: GenerateBracketRequest) -> dict[str, Any]:
     }
 
 
+def _get_draws_matches(tournament_id: str, event: Optional[str], standard: Optional[str], age_group: Optional[str]) -> list[dict[str, Any]]:
+    """Fetch matches for draws; works even if partner columns don't exist (migration 005 not run)."""
+    base_cols = "id, tournament_id, event, standard, age_group, group_id, round, round_order, slot_in_round, player1_id, player2_id, score1, score2, winner_id, status, scheduled_at"
+    q = (
+        supabase.table("matches")
+        .select(f"{base_cols}, player1_partner_id, player2_partner_id")
+        .eq("tournament_id", tournament_id)
+        .order("round_order")
+        .order("slot_in_round")
+    )
+    if event:
+        q = q.eq("event", event)
+    if standard:
+        q = q.eq("standard", standard)
+    if age_group:
+        q = q.eq("age_group", age_group)
+    try:
+        r = q.execute()
+        return r.data or []
+    except Exception as e:
+        err_str = str(e).lower()
+        if "42703" in err_str or "player1_partner_id" in err_str or "player2_partner_id" in err_str or "does not exist" in err_str:
+            q2 = supabase.table("matches").select(base_cols).eq("tournament_id", tournament_id)
+            if event:
+                q2 = q2.eq("event", event)
+            if standard:
+                q2 = q2.eq("standard", standard)
+            if age_group:
+                q2 = q2.eq("age_group", age_group)
+            r = q2.order("round_order").order("slot_in_round").execute()
+            matches = r.data or []
+            for m in matches:
+                m["player1_partner_id"] = None
+                m["player2_partner_id"] = None
+            return matches
+        raise
+
+
 @app.get("/draws")
 def get_draws(
     tournament_id: str = Query(..., description="Tournament UUID"),
@@ -188,21 +228,7 @@ def get_draws(
     if not supabase:
         raise HTTPException(status_code=503, detail="Supabase not configured")
 
-    q = (
-        supabase.table("matches")
-        .select("id, tournament_id, event, standard, age_group, group_id, round, round_order, slot_in_round, player1_id, player1_partner_id, player2_id, player2_partner_id, score1, score2, winner_id, status, scheduled_at")
-        .eq("tournament_id", tournament_id)
-        .order("round_order")
-        .order("slot_in_round")
-    )
-    if event:
-        q = q.eq("event", event)
-    if standard:
-        q = q.eq("standard", standard)
-    if age_group:
-        q = q.eq("age_group", age_group)
-    r = q.execute()
-    matches = r.data or []
+    matches = _get_draws_matches(tournament_id, event, standard, age_group)
 
     # Resolve player IDs to names (including partners for doubles)
     reg_ids = set()
@@ -420,27 +446,47 @@ def generate_round_robin(body: GenerateRoundRobinRequest) -> dict[str, Any]:
 
         if is_doubles:
             pairs = _form_pairs(rows)
-            if len(pairs) < 2:
-                continue
-            match_payloads = []
-            for i in range(len(pairs)):
-                for j in range(i + 1, len(pairs)):
-                    a, b = pairs[i], pairs[j]
-                    match_payloads.append({
-                        "tournament_id": body.tournament_id,
-                        "event": body.event,
-                        "standard": body.standard,
-                        "age_group": body.age_group,
-                        "group_id": gid,
-                        "round": gname,
-                        "round_order": 0,
-                        "slot_in_round": len(match_payloads),
-                        "player1_id": a[0],
-                        "player1_partner_id": a[1],
-                        "player2_id": b[0],
-                        "player2_partner_id": b[1],
-                        "status": "scheduled",
-                    })
+            if len(pairs) >= 2:
+                match_payloads = []
+                for i in range(len(pairs)):
+                    for j in range(i + 1, len(pairs)):
+                        a, b = pairs[i], pairs[j]
+                        match_payloads.append({
+                            "tournament_id": body.tournament_id,
+                            "event": body.event,
+                            "standard": body.standard,
+                            "age_group": body.age_group,
+                            "group_id": gid,
+                            "round": gname,
+                            "round_order": 0,
+                            "slot_in_round": len(match_payloads),
+                            "player1_id": a[0],
+                            "player1_partner_id": a[1],
+                            "player2_id": b[0],
+                            "player2_partner_id": b[1],
+                            "status": "scheduled",
+                        })
+            else:
+                # No linked pairs: round-robin individuals (no partner ids)
+                player_ids = [r["id"] for r in rows]
+                if len(player_ids) < 2:
+                    continue
+                match_payloads = []
+                for i in range(len(player_ids)):
+                    for j in range(i + 1, len(player_ids)):
+                        match_payloads.append({
+                            "tournament_id": body.tournament_id,
+                            "event": body.event,
+                            "standard": body.standard,
+                            "age_group": body.age_group,
+                            "group_id": gid,
+                            "round": gname,
+                            "round_order": 0,
+                            "slot_in_round": len(match_payloads),
+                            "player1_id": player_ids[i],
+                            "player2_id": player_ids[j],
+                            "status": "scheduled",
+                        })
         else:
             player_ids = [r["id"] for r in rows]
             if len(player_ids) < 2:

@@ -471,6 +471,7 @@ export default function AdminPage() {
             <thead className="bg-gray-50">
               <tr>
                 <th className="px-6 py-3 text-left text-xs font-semibold uppercase tracking-wider text-gray-600">Name</th>
+                <th className="px-6 py-3 text-left text-xs font-semibold uppercase tracking-wider text-gray-600">Partner</th>
                 <th className="px-6 py-3 text-left text-xs font-semibold uppercase tracking-wider text-gray-600">Email</th>
                 <th className="px-6 py-3 text-left text-xs font-semibold uppercase tracking-wider text-gray-600">Age</th>
                 <th className="px-6 py-3 text-left text-xs font-semibold uppercase tracking-wider text-gray-600">Event</th>
@@ -480,9 +481,13 @@ export default function AdminPage() {
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-200 bg-white">
-              {registrations.map((r) => (
+              {registrations.map((r) => {
+                const partnerReg = r.partner_id ? registrations.find((x) => x.id === r.partner_id) : null;
+                const partnerDisplay = partnerReg ? partnerReg.full_name : (r.partner_name ?? "—");
+                return (
                 <tr key={r.id} className="transition-colors hover:bg-gray-50">
                   <td className="whitespace-nowrap px-6 py-4 font-medium text-gray-900">{r.full_name}</td>
+                  <td className="whitespace-nowrap px-6 py-4 text-sm text-gray-600">{partnerDisplay}</td>
                   <td className="whitespace-nowrap px-6 py-4 text-sm text-gray-600">{r.email}</td>
                   <td className="whitespace-nowrap px-6 py-4">
                     <span className="rounded-full bg-brand-light px-2.5 py-1 text-xs font-semibold text-brand">{r.age_group}</span>
@@ -495,7 +500,8 @@ export default function AdminPage() {
                     <button type="button" onClick={() => handleDeleteRegistration(r.id)} disabled={deletingRegId === r.id} className="text-sm font-medium text-red-600 hover:text-red-800 disabled:opacity-50">Delete</button>
                   </td>
                 </tr>
-              ))}
+              );
+              })}
             </tbody>
           </table>
         </div>
