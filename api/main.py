@@ -15,6 +15,25 @@ from pydantic import BaseModel
 
 from bracket import generate_bracket_matches
 
+
+class UpdateRegistrationBody(BaseModel):
+    full_name: Optional[str] = None
+    email: Optional[str] = None
+    phone: Optional[str] = None
+    age_group: Optional[str] = None
+    event: Optional[str] = None
+    standard: Optional[str] = None
+    partner_name: Optional[str] = None
+    notes: Optional[str] = None
+
+
+class UpdateMatchBody(BaseModel):
+    score1: Optional[int] = None
+    score2: Optional[int] = None
+    winner_id: Optional[str] = None
+    status: Optional[str] = None
+    scheduled_at: Optional[str] = None
+
 app = FastAPI(title="Tournament API")
 
 # Allow frontend on localhost and common production hosts
@@ -158,3 +177,55 @@ def get_draws(
     standards = list({m.get("standard") for m in matches if m.get("standard")}) if matches else []
     age_groups = list({m.get("age_group") for m in matches if m.get("age_group")}) if matches else []
     return {"tournament_id": tournament_id, "event_filter": event, "standard_filter": standard, "age_group_filter": age_group, "events": events, "standards": standards, "age_groups": age_groups, "matches": matches}
+
+
+# --- Admin-only: edit/delete registrations (player info) and matches (draws) ---
+
+@app.patch("/registrations/{registration_id}")
+def update_registration(registration_id: str, body: UpdateRegistrationBody) -> dict[str, Any]:
+    """Update a registration (player info). Admin only – call from admin UI only."""
+    if not supabase:
+        raise HTTPException(status_code=503, detail="Supabase not configured")
+    payload = body.model_dump(exclude_unset=True)
+    if not payload:
+        return {"message": "No changes", "id": registration_id}
+    r = supabase.table("registrations").update(payload).eq("id", registration_id).execute()
+    if not r.data:
+        raise HTTPException(status_code=404, detail="Registration not found")
+    return {"message": "Updated", "registration": r.data[0]}
+
+
+@app.delete("/registrations/{registration_id}")
+def delete_registration(registration_id: str) -> dict[str, str]:
+    """Delete a registration (player). Admin only."""
+    if not supabase:
+        raise HTTPException(status_code=503, detail="Supabase not configured")
+    r = supabase.table("registrations").delete().eq("id", registration_id).execute()
+    if not r.data:
+        raise HTTPException(status_code=404, detail="Registration not found")
+    return {"message": "Deleted", "id": registration_id}
+
+
+@app.patch("/matches/{match_id}")
+def update_match(match_id: str, body: UpdateMatchBody) -> dict[str, Any]:
+    """Update a match (score, winner, status). Admin only – draws editable only for admin."""
+    if not supabase:
+        raise HTTPException(status_code=503, detail="Supabase not configured")
+    payload = body.model_dump(exclude_unset=True)
+    if not payload:
+        return {"message": "No changes", "id": match_id}
+    r = supabase.table("matches").update(payload).eq("id", match_id).execute()
+    if not r.data:
+        raise HTTPException(status_code=404, detail="Match not found")
+    return {"message": "Updated", "match": r.data[0]}
+
+
+@app.delete("/matches/{match_id}")
+def delete_match(match_id: str) -> dict[str, str]:
+    """Delete a match. Admin only."""
+    if not supabase:
+        raise HTTPException(status_code=503, detail="Supabase not configured")
+    r = supabase.table("matches").delete().eq("id", match_id).execute()
+    if not r.data:
+        raise HTTPException(status_code=404, detail="Match not found")
+    return {"message": "Deleted", "id": match_id}
