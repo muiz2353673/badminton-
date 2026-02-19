@@ -35,6 +35,8 @@ export type Match = {
   tournament_id: string;
   round: string;
   event: string;
+  round_order?: number | null;
+  slot_in_round?: number | null;
   player1_id: string | null;
   player2_id: string | null;
   score1: number | null;
@@ -42,6 +44,10 @@ export type Match = {
   winner_id: string | null;
   scheduled_at: string | null;
   status: string;
+  // From API /draws
+  player1_name?: string;
+  player2_name?: string;
+  winner_name?: string | null;
 };
 
 export type Venue = {

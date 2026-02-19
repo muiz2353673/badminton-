@@ -4,9 +4,10 @@ React (Next.js) + Python (FastAPI) + Supabase.
 
 ## Structure
 
-- **`web/`** – Next.js (React) front end. Register, players, schedule, admin.
-- **`api/`** – FastAPI backend. Bracket generation, future: emails, cron.
+- **`web/`** – Next.js (React) front end. Register, players, schedule, draws, admin.
+- **`api/`** – FastAPI backend. Full single-elimination bracket generation and draws API.
 - **`supabase/schema.sql`** – Database schema. Run in Supabase SQL Editor.
+- **`supabase/migrations/001_add_bracket_fields.sql`** – Run after schema: adds `round_order`, `slot_in_round` to matches for draw display.
 - **`index.html`** – Static site (backup / optional).
 - **`GOOGLE_SHEETS_PLAN.md`** – Google Sheets fallback for registration.
 

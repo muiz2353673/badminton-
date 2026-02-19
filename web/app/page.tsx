@@ -24,6 +24,9 @@ export default function HomePage() {
           <Link href="/schedule" className="btn-secondary">
             Schedule
           </Link>
+          <Link href="/draws" className="btn-secondary">
+            Draws
+          </Link>
         </div>
       </section>
 

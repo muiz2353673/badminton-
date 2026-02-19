@@ -2,12 +2,24 @@
 
 import { useEffect, useState } from "react";
 import { supabase } from "@/lib/supabase";
+import { generateBracket } from "@/lib/api";
 import type { Registration, Tournament } from "@/lib/supabase";
+
+const EVENTS = [
+  "Singles (Woodhouse)",
+  "Women's Doubles (Woodhouse)",
+  "Mixed Doubles (Woodhouse)",
+  "Men's Doubles (Wren)",
+];
 
 export default function AdminPage() {
   const [registrations, setRegistrations] = useState<Registration[]>([]);
   const [tournaments, setTournaments] = useState<Tournament[]>([]);
   const [loading, setLoading] = useState(true);
+  const [drawTournamentId, setDrawTournamentId] = useState("");
+  const [drawEvent, setDrawEvent] = useState(EVENTS[0]);
+  const [drawMessage, setDrawMessage] = useState<{ ok: boolean; text: string } | null>(null);
+  const [drawLoading, setDrawLoading] = useState(false);
 
   useEffect(() => {
     (async () => {
@@ -16,10 +28,31 @@ export default function AdminPage() {
         supabase.from("tournaments").select("*"),
       ]);
       if (!r.error) setRegistrations(r.data ?? []);
-      if (!t.error) setTournaments(t.data ?? []);
+      if (!t.error) {
+        const data = t.data ?? [];
+        setTournaments(data);
+        if (data.length && !drawTournamentId) setDrawTournamentId(data[0].id);
+      }
       setLoading(false);
     })();
-  }, []);
+  }, [drawTournamentId]);
+
+  async function handleGenerateDraw() {
+    if (!drawTournamentId || !drawEvent) return;
+    setDrawMessage(null);
+    setDrawLoading(true);
+    try {
+      const res = await generateBracket(drawTournamentId, drawEvent);
+      setDrawMessage({
+        ok: true,
+        text: `Draw generated: ${res.matches_created ?? 0} matches for ${res.count ?? 0} players. View on the Draws page.`,
+      });
+    } catch (e) {
+      setDrawMessage({ ok: false, text: e instanceof Error ? e.message : "Failed to generate draw." });
+    } finally {
+      setDrawLoading(false);
+    }
+  }
 
   if (loading) {
     return (
@@ -32,7 +65,39 @@ export default function AdminPage() {
   return (
     <div className="page-container">
       <h1 className="page-title">Admin</h1>
-      <p className="page-subtitle">Registrations and tournament info. Use the Python API for bracket generation.</p>
+      <p className="page-subtitle">Registrations, draw generation, and tournament info.</p>
+
+      <section className="mt-10">
+        <h2 className="text-lg font-semibold text-gray-900">Generate draw</h2>
+        <p className="mt-1 text-sm text-gray-600">Create a single-elimination bracket for an event. Existing draw for that event will be replaced.</p>
+        <div className="mt-4 flex flex-wrap items-end gap-4">
+          <div>
+            <label htmlFor="admin-tournament" className="mb-1 block text-sm font-medium text-gray-700">Tournament</label>
+            <select id="admin-tournament" value={drawTournamentId} onChange={(e) => setDrawTournamentId(e.target.value)} className="min-w-[220px]">
+              <option value="">Select</option>
+              {tournaments.map((t) => (
+                <option key={t.id} value={t.id}>{t.name}</option>
+              ))}
+            </select>
+          </div>
+          <div>
+            <label htmlFor="admin-event" className="mb-1 block text-sm font-medium text-gray-700">Event</label>
+            <select id="admin-event" value={drawEvent} onChange={(e) => setDrawEvent(e.target.value)} className="min-w-[200px]">
+              {EVENTS.map((e) => (
+                <option key={e} value={e}>{e}</option>
+              ))}
+            </select>
+          </div>
+          <button type="button" onClick={handleGenerateDraw} disabled={drawLoading || !drawTournamentId} className="btn-primary">
+            {drawLoading ? "Generating…" : "Generate draw"}
+          </button>
+        </div>
+        {drawMessage && (
+          <div className={`mt-3 rounded-lg border p-3 text-sm ${drawMessage.ok ? "border-green-200 bg-green-50 text-green-800" : "border-red-200 bg-red-50 text-red-800"}`}>
+            {drawMessage.text}
+          </div>
+        )}
+      </section>
 
       <section className="mt-10">
         <h2 className="text-lg font-semibold text-gray-900">Tournaments</h2>
