@@ -77,7 +77,13 @@ Use the tournament UUID from Supabase (e.g. from the tournaments table). After r
 - Terminal 1: `cd web && npm run dev` (port 3000)  
 - Terminal 2: `cd api && source venv/bin/activate && uvicorn main:app --reload --port 8000` (port 8000)
 
-## 5. Why is it slow? (Render / free tier)
+## 5. Production (e.g. Render)
+
+- **API service** – Deploy the `api/` app (e.g. as `tournament-api`). Set `SUPABASE_URL` and `SUPABASE_SERVICE_ROLE_KEY` in the service environment.
+- **Web service** – Deploy the `web/` app (e.g. as `tournament-web`). Set `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`, and **`NEXT_PUBLIC_API_URL`** to your **deployed API URL** (e.g. `https://tournament-api.onrender.com`). If `NEXT_PUBLIC_API_URL` is missing or wrong, the Draws page will show “Load failed”.
+- Redeploy the web service after changing any `NEXT_PUBLIC_*` env vars (they are baked in at build time).
+
+## 6. Why is it slow? (Render / free tier)
 
 - **Cold starts** – On Render’s free tier, the **backend API sleeps** after ~15 minutes of no traffic. The first request after that can take **30–60 seconds** while the service starts. The frontend (Next.js) may also spin down. That’s the main reason “everything feels slow” after a break.
 - **What helps**

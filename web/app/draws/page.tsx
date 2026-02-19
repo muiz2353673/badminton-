@@ -167,9 +167,11 @@ export default function DrawsPage() {
         <div className="card mt-10 border-amber-200 bg-amber-50 text-center">
           <p className="font-medium text-amber-800">{drawError}</p>
           <p className="mt-2 text-sm text-amber-700">
-            Run the API locally: <code className="rounded bg-amber-100 px-1">cd api && source venv/bin/activate && uvicorn main:app --reload --port 8000</code>
+            <strong>Local:</strong> Run the API with <code className="rounded bg-amber-100 px-1">cd api && source venv/bin/activate && uvicorn main:app --reload --port 8000</code> and set <code className="rounded bg-amber-100 px-1">NEXT_PUBLIC_API_URL=http://localhost:8000</code> in <code className="rounded bg-amber-100 px-1">web/.env.local</code>.
           </p>
-          <p className="mt-1 text-sm text-amber-700">Set <code className="rounded bg-amber-100 px-1">NEXT_PUBLIC_API_URL=http://localhost:8000</code> in <code className="rounded bg-amber-100 px-1">web/.env.local</code></p>
+          <p className="mt-1 text-sm text-amber-700">
+            <strong>Production (e.g. Render):</strong> Set <code className="rounded bg-amber-100 px-1">NEXT_PUBLIC_API_URL</code> for the web service to your deployed API URL (e.g. <code className="rounded bg-amber-100 px-1">https://tournament-api.onrender.com</code>). Redeploy the web service after changing env vars.
+          </p>
         </div>
       ) : matches.length === 0 ? (
         <div className="card mt-10 text-center">
