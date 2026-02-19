@@ -24,6 +24,7 @@ export type Registration = {
   age_group: string;
   event: string;
   partner_name: string | null;
+  partner_id: string | null;
   standard: string | null;
   notes: string | null;
   group_id: string | null;
@@ -52,7 +53,9 @@ export type Match = {
   round_order?: number | null;
   slot_in_round?: number | null;
   player1_id: string | null;
+  player1_partner_id?: string | null;
   player2_id: string | null;
+  player2_partner_id?: string | null;
   score1: number | null;
   score2: number | null;
   winner_id: string | null;
@@ -61,6 +64,8 @@ export type Match = {
   // From API /draws
   player1_name?: string;
   player2_name?: string;
+  player1_partner_name?: string | null;
+  player2_partner_name?: string | null;
   winner_name?: string | null;
 };
 

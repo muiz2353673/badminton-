@@ -209,6 +209,7 @@ export default function AdminPage() {
         event: editingRegistration.event,
         standard: editingRegistration.standard ?? undefined,
         partner_name: editingRegistration.partner_name ?? undefined,
+        partner_id: editingRegistration.partner_id ?? undefined,
         notes: editingRegistration.notes ?? undefined,
       };
       await updateRegistration(editingRegistration.id, data);
@@ -539,8 +540,24 @@ export default function AdminPage() {
                 </select>
               </div>
               <div>
-                <label className="mb-1 block text-sm font-medium text-gray-700">Partner name</label>
-                <input value={editingRegistration.partner_name ?? ""} onChange={(e) => setEditingRegistration({ ...editingRegistration, partner_name: e.target.value || null })} className="w-full" />
+                <label className="mb-1 block text-sm font-medium text-gray-700">Partner name (display)</label>
+                <input value={editingRegistration.partner_name ?? ""} onChange={(e) => setEditingRegistration({ ...editingRegistration, partner_name: e.target.value || null })} className="w-full" placeholder="e.g. Jane Smith" />
+              </div>
+              <div>
+                <label className="mb-1 block text-sm font-medium text-gray-700">Link to partner (doubles)</label>
+                <select
+                  value={editingRegistration.partner_id ?? ""}
+                  onChange={(e) => setEditingRegistration({ ...editingRegistration, partner_id: e.target.value || null })}
+                  className="w-full"
+                >
+                  <option value="">No link</option>
+                  {registrations
+                    .filter((r) => r.tournament_id === editingRegistration.tournament_id && r.event === editingRegistration.event && r.id !== editingRegistration.id)
+                    .map((r) => (
+                      <option key={r.id} value={r.id}>{r.full_name} ({r.email})</option>
+                    ))}
+                </select>
+                <p className="mt-1 text-xs text-gray-500">For doubles/mixed: link to the other player&apos;s registration so they appear as a pair in the draw. Both must link to each other (saving sets it for both).</p>
               </div>
               <div>
                 <label className="mb-1 block text-sm font-medium text-gray-700">Notes</label>

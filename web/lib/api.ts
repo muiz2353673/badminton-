@@ -134,6 +134,7 @@ export type RegistrationUpdate = {
   event?: string;
   standard?: string | null;
   partner_name?: string | null;
+  partner_id?: string | null;
   notes?: string | null;
   group_id?: string | null;
 };
