@@ -21,10 +21,12 @@ export default function DrawsPage() {
   const [drawError, setDrawError] = useState<string | null>(null);
 
   useEffect(() => {
-    supabase
-      .from("tournaments")
-      .select("*")
-      .order("start_date", { ascending: true })
+    Promise.resolve(
+      supabase
+        .from("tournaments")
+        .select("*")
+        .order("start_date", { ascending: true })
+    )
       .then(({ data }) => {
         setTournaments(data ?? []);
         if (data?.length && !tournamentId) setTournamentId(data[0].id);
