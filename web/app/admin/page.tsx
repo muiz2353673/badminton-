@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabase";
 import { generateBracket } from "@/lib/api";
 import type { Registration, Tournament } from "@/lib/supabase";
@@ -12,14 +13,26 @@ const EVENTS = [
   "Men's Doubles (Wren)",
 ];
 
+const STANDARDS = ["Recreational", "Intermediate", "Advanced"];
+const AGE_GROUPS = ["U11", "U13", "U15", "U17", "U19", "Senior"];
+
 export default function AdminPage() {
+  const router = useRouter();
   const [registrations, setRegistrations] = useState<Registration[]>([]);
   const [tournaments, setTournaments] = useState<Tournament[]>([]);
   const [loading, setLoading] = useState(true);
   const [drawTournamentId, setDrawTournamentId] = useState("");
   const [drawEvent, setDrawEvent] = useState(EVENTS[0]);
+  const [drawStandard, setDrawStandard] = useState(STANDARDS[0]);
+  const [drawAgeGroup, setDrawAgeGroup] = useState(AGE_GROUPS[0]);
   const [drawMessage, setDrawMessage] = useState<{ ok: boolean; text: string } | null>(null);
   const [drawLoading, setDrawLoading] = useState(false);
+
+  async function handleLogout() {
+    await fetch("/api/auth/admin-logout", { method: "POST" });
+    router.push("/admin/login");
+    router.refresh();
+  }
 
   useEffect(() => {
     (async () => {
@@ -38,11 +51,11 @@ export default function AdminPage() {
   }, [drawTournamentId]);
 
   async function handleGenerateDraw() {
-    if (!drawTournamentId || !drawEvent) return;
+    if (!drawTournamentId || !drawEvent || !drawStandard || !drawAgeGroup) return;
     setDrawMessage(null);
     setDrawLoading(true);
     try {
-      const res = await generateBracket(drawTournamentId, drawEvent);
+      const res = await generateBracket(drawTournamentId, drawEvent, drawStandard, drawAgeGroup);
       setDrawMessage({
         ok: true,
         text: `Draw generated: ${res.matches_created ?? 0} matches for ${res.count ?? 0} players. View on the Draws page.`,
@@ -64,12 +77,19 @@ export default function AdminPage() {
 
   return (
     <div className="page-container">
-      <h1 className="page-title">Admin</h1>
-      <p className="page-subtitle">Registrations, draw generation, and tournament info.</p>
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <div>
+          <h1 className="page-title">Admin</h1>
+          <p className="page-subtitle">Registrations, draw generation, and tournament info.</p>
+        </div>
+        <button type="button" onClick={handleLogout} className="btn-secondary text-sm">
+          Log out
+        </button>
+      </div>
 
       <section className="mt-10">
         <h2 className="text-lg font-semibold text-gray-900">Generate draw</h2>
-        <p className="mt-1 text-sm text-gray-600">Create a single-elimination bracket for an event. Existing draw for that event will be replaced.</p>
+        <p className="mt-1 text-sm text-gray-600">Create a single-elimination bracket for an event + standard + age group. Existing draw for that combination will be replaced.</p>
         <div className="mt-4 flex flex-wrap items-end gap-4">
           <div>
             <label htmlFor="admin-tournament" className="mb-1 block text-sm font-medium text-gray-700">Tournament</label>
@@ -85,6 +105,22 @@ export default function AdminPage() {
             <select id="admin-event" value={drawEvent} onChange={(e) => setDrawEvent(e.target.value)} className="min-w-[200px]">
               {EVENTS.map((e) => (
                 <option key={e} value={e}>{e}</option>
+              ))}
+            </select>
+          </div>
+          <div>
+            <label htmlFor="admin-standard" className="mb-1 block text-sm font-medium text-gray-700">Standard</label>
+            <select id="admin-standard" value={drawStandard} onChange={(e) => setDrawStandard(e.target.value)} className="min-w-[160px]">
+              {STANDARDS.map((s) => (
+                <option key={s} value={s}>{s}</option>
+              ))}
+            </select>
+          </div>
+          <div>
+            <label htmlFor="admin-age-group" className="mb-1 block text-sm font-medium text-gray-700">Age group</label>
+            <select id="admin-age-group" value={drawAgeGroup} onChange={(e) => setDrawAgeGroup(e.target.value)} className="min-w-[120px]">
+              {AGE_GROUPS.map((g) => (
+                <option key={g} value={g}>{g}</option>
               ))}
             </select>
           </div>

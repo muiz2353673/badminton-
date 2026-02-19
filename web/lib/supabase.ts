@@ -35,6 +35,8 @@ export type Match = {
   tournament_id: string;
   round: string;
   event: string;
+  standard?: string | null;
+  age_group?: string | null;
   round_order?: number | null;
   slot_in_round?: number | null;
   player1_id: string | null;

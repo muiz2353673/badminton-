@@ -144,12 +144,13 @@ export default function RegisterPage() {
               <label htmlFor="standard" className="mb-1.5 block text-sm font-medium text-gray-700">
                 Standard
               </label>
-              <select id="standard" name="standard">
-                <option>Recreational</option>
-                <option>League (Div 4–6)</option>
-                <option>League (Div 1–3)</option>
-                <option>County / Performance</option>
+              <select id="standard" name="standard" required>
+                <option value="">Select…</option>
+                <option value="Recreational">Recreational</option>
+                <option value="Intermediate">Intermediate</option>
+                <option value="Advanced">Advanced</option>
               </select>
+              <p className="mt-1 text-xs text-gray-500">Used for all age groups (including Senior). Draws are generated per event + standard.</p>
             </div>
 
             <div>

@@ -5,6 +5,9 @@ Uses Supabase (service role) for DB. Run: uvicorn main:app --reload --port 8000
 import os
 from typing import Any, Optional
 
+from dotenv import load_dotenv
+load_dotenv()
+
 from fastapi import FastAPI, HTTPException, Query
 from fastapi.middleware.cors import CORSMiddleware
 from supabase import create_client, Client
@@ -39,6 +42,8 @@ supabase: Optional[Client] = create_client(url, key) if url and key else None
 class GenerateBracketRequest(BaseModel):
     tournament_id: str
     event: str
+    standard: str  # e.g. Intermediate, Advanced
+    age_group: str  # U11, U13, U15, U17, U19, Senior – draws are per event + standard + age group
 
 
 @app.get("/")
@@ -53,7 +58,7 @@ def health() -> dict[str, str]:
 
 @app.post("/generate-bracket")
 def generate_bracket(body: GenerateBracketRequest) -> dict[str, Any]:
-    """Generate full single-elimination bracket from registrations for an event."""
+    """Generate full single-elimination bracket from registrations for an event + standard + age group."""
     if not supabase:
         raise HTTPException(status_code=503, detail="Supabase not configured")
 
@@ -62,16 +67,26 @@ def generate_bracket(body: GenerateBracketRequest) -> dict[str, Any]:
         .select("id, full_name")
         .eq("tournament_id", body.tournament_id)
         .eq("event", body.event)
+        .eq("standard", body.standard)
+        .eq("age_group", body.age_group)
         .execute()
     )
     rows = r.data or []
     if len(rows) < 2:
         return {"message": "Not enough players", "count": len(rows), "matches_created": 0, "matches": []}
 
-    # Remove existing matches for this tournament + event so we can regenerate
-    supabase.table("matches").delete().eq("tournament_id", body.tournament_id).eq("event", body.event).execute()
+    # Remove existing matches for this tournament + event + standard + age_group so we can regenerate
+    (
+        supabase.table("matches")
+        .delete()
+        .eq("tournament_id", body.tournament_id)
+        .eq("event", body.event)
+        .eq("standard", body.standard)
+        .eq("age_group", body.age_group)
+        .execute()
+    )
 
-    match_payloads = generate_bracket_matches(body.tournament_id, body.event, rows)
+    match_payloads = generate_bracket_matches(body.tournament_id, body.event, body.standard, body.age_group, rows)
     inserted = []
     for payload in match_payloads:
         ins = supabase.table("matches").insert(payload).execute()
@@ -90,20 +105,26 @@ def generate_bracket(body: GenerateBracketRequest) -> dict[str, Any]:
 def get_draws(
     tournament_id: str = Query(..., description="Tournament UUID"),
     event: Optional[str] = Query(None, description="Filter by event name"),
+    standard: Optional[str] = Query(None, description="Filter by standard (e.g. Intermediate, Advanced)"),
+    age_group: Optional[str] = Query(None, description="Filter by age group (U11, U13, U15, U17, U19, Senior)"),
 ) -> dict[str, Any]:
-    """Return matches for draw display, with player names. Optionally filter by event."""
+    """Return matches for draw display, with player names. Optionally filter by event, standard, and age group."""
     if not supabase:
         raise HTTPException(status_code=503, detail="Supabase not configured")
 
     q = (
         supabase.table("matches")
-        .select("id, tournament_id, event, round, round_order, slot_in_round, player1_id, player2_id, score1, score2, winner_id, status, scheduled_at")
+        .select("id, tournament_id, event, standard, age_group, round, round_order, slot_in_round, player1_id, player2_id, score1, score2, winner_id, status, scheduled_at")
         .eq("tournament_id", tournament_id)
         .order("round_order")
         .order("slot_in_round")
     )
     if event:
         q = q.eq("event", event)
+    if standard:
+        q = q.eq("standard", standard)
+    if age_group:
+        q = q.eq("age_group", age_group)
     r = q.execute()
     matches = r.data or []
 
@@ -134,4 +155,6 @@ def get_draws(
         m["winner_name"] = names.get(str(m.get("winner_id") or "")) or None
 
     events = list({m["event"] for m in matches}) if matches else []
-    return {"tournament_id": tournament_id, "event_filter": event, "events": events, "matches": matches}
+    standards = list({m.get("standard") for m in matches if m.get("standard")}) if matches else []
+    age_groups = list({m.get("age_group") for m in matches if m.get("age_group")}) if matches else []
+    return {"tournament_id": tournament_id, "event_filter": event, "standard_filter": standard, "age_group_filter": age_group, "events": events, "standards": standards, "age_groups": age_groups, "matches": matches}

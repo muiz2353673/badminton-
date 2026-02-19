@@ -8,6 +8,8 @@ React (Next.js) + Python (FastAPI) + Supabase.
 - **`api/`** – FastAPI backend. Full single-elimination bracket generation and draws API.
 - **`supabase/schema.sql`** – Database schema. Run in Supabase SQL Editor.
 - **`supabase/migrations/001_add_bracket_fields.sql`** – Run after schema: adds `round_order`, `slot_in_round` to matches for draw display.
+- **`supabase/migrations/002_add_standard_to_matches.sql`** – Run after 001: adds `standard` to matches so draws are per event + standard (Intermediate / Advanced for all age groups).
+- **`supabase/migrations/003_add_age_group_to_matches.sql`** – Run after 002: adds `age_group` to matches so draws are per event + standard + age group (U11, U13, U15, U17, U19, Senior).
 - **`index.html`** – Static site (backup / optional).
 - **`GOOGLE_SHEETS_PLAN.md`** – Google Sheets fallback for registration.
 
@@ -29,6 +31,8 @@ Edit **`web/.env.local`**:
 - `NEXT_PUBLIC_SUPABASE_URL` = your Supabase project URL  
 - `NEXT_PUBLIC_SUPABASE_ANON_KEY` = your Supabase anon key  
 - `NEXT_PUBLIC_API_URL` = `http://localhost:8000` (optional, for calling Python API)
+- `ADMIN_USERNAME` = staff login username (default: `admin`)
+- `ADMIN_PASSWORD` = staff login password (default: `password@12345`). Set in production.
 
 ```bash
 npm install

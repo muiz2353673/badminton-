@@ -72,6 +72,12 @@ export default function SchedulePage() {
                 <span className="font-semibold text-gray-900">{m.round}</span>
                 <span className="mx-2 text-gray-400">·</span>
                 <span className="text-gray-700">{m.event}</span>
+                {(m.standard || m.age_group) && (
+                  <>
+                    <span className="mx-2 text-gray-400">·</span>
+                    <span className="text-gray-600">{[m.standard, m.age_group].filter(Boolean).join(" ")}</span>
+                  </>
+                )}
                 <div className="mt-1 text-sm text-gray-600">
                   {names[m.player1_id ?? ""] ?? "—"} vs {names[m.player2_id ?? ""] ?? "—"}
                   {(m.score1 != null || m.score2 != null) && (

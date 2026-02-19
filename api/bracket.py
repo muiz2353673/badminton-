@@ -21,11 +21,13 @@ def round_label(round_order: int, total_rounds: int) -> str:
 def generate_bracket_matches(
     tournament_id: str,
     event: str,
+    standard: str | None,
+    age_group: str | None,
     registration_rows: list[dict[str, Any]],
 ) -> list[dict[str, Any]]:
     """
     Build list of match payloads for a full single-elimination bracket.
-    registration_rows: list of {id, full_name} from registrations.
+    registration_rows: list of {id, full_name} from registrations (filtered by event + standard + age_group).
     """
     players = [r["id"] for r in registration_rows]
     n = len(players)
@@ -49,6 +51,8 @@ def generate_bracket_matches(
         matches_to_insert.append({
             "tournament_id": tournament_id,
             "event": event,
+            "standard": standard,
+            "age_group": age_group,
             "round": round_label(1, total_rounds),
             "round_order": 1,
             "slot_in_round": slot,
@@ -64,6 +68,8 @@ def generate_bracket_matches(
             matches_to_insert.append({
                 "tournament_id": tournament_id,
                 "event": event,
+                "standard": standard,
+                "age_group": age_group,
                 "round": round_label(r, total_rounds),
                 "round_order": r,
                 "slot_in_round": s,

@@ -10,7 +10,11 @@ export default function DrawsPage() {
   const [tournaments, setTournaments] = useState<Tournament[]>([]);
   const [tournamentId, setTournamentId] = useState<string>("");
   const [eventFilter, setEventFilter] = useState<string>("");
+  const [standardFilter, setStandardFilter] = useState<string>("");
+  const [ageGroupFilter, setAgeGroupFilter] = useState<string>("");
   const [events, setEvents] = useState<string[]>([]);
+  const [standards, setStandards] = useState<string[]>([]);
+  const [ageGroups, setAgeGroups] = useState<string[]>([]);
   const [matches, setMatches] = useState<Match[]>([]);
   const [loading, setLoading] = useState(true);
   const [loadingDraw, setLoadingDraw] = useState(false);
@@ -30,16 +34,22 @@ export default function DrawsPage() {
   useEffect(() => {
     if (!tournamentId) return;
     setLoadingDraw(true);
-    getDraws(tournamentId, eventFilter || undefined)
+    getDraws(tournamentId, eventFilter || undefined, standardFilter || undefined, ageGroupFilter || undefined)
       .then((d) => {
         setMatches(d.matches);
         setEvents(d.events);
+        setStandards(d.standards ?? []);
+        setAgeGroups(d.age_groups ?? []);
         if (d.events.length && !eventFilter) setEventFilter(d.events[0]);
         if (d.events.length && eventFilter && !d.events.includes(eventFilter)) setEventFilter(d.events[0]);
+        if ((d.standards?.length ?? 0) > 0 && !standardFilter) setStandardFilter(d.standards[0]);
+        if ((d.standards?.length ?? 0) > 0 && standardFilter && !d.standards?.includes(standardFilter)) setStandardFilter(d.standards[0]);
+        if ((d.age_groups?.length ?? 0) > 0 && !ageGroupFilter) setAgeGroupFilter(d.age_groups[0]);
+        if ((d.age_groups?.length ?? 0) > 0 && ageGroupFilter && !d.age_groups?.includes(ageGroupFilter)) setAgeGroupFilter(d.age_groups[0]);
       })
       .catch(() => setMatches([]))
       .finally(() => setLoadingDraw(false));
-  }, [tournamentId, eventFilter]);
+  }, [tournamentId, eventFilter, standardFilter, ageGroupFilter]);
 
   const byRound = matches.reduce<Record<number, Match[]>>((acc, m) => {
     const r = m.round_order ?? 0;
@@ -63,7 +73,7 @@ export default function DrawsPage() {
   return (
     <div className="page-container">
       <h1 className="page-title">Draws</h1>
-      <p className="page-subtitle">View brackets by tournament and event.</p>
+      <p className="page-subtitle">View brackets by tournament, event, standard, and age group.</p>
 
       <div className="mt-6 flex flex-wrap gap-4">
         <div>
@@ -102,6 +112,42 @@ export default function DrawsPage() {
             ))}
           </select>
         </div>
+        <div>
+          <label htmlFor="draw-standard" className="mb-1 block text-sm font-medium text-gray-700">
+            Standard
+          </label>
+          <select
+            id="draw-standard"
+            value={standardFilter}
+            onChange={(e) => setStandardFilter(e.target.value)}
+            className="min-w-[160px]"
+          >
+            <option value="">All standards</option>
+            {standards.map((s) => (
+              <option key={s} value={s}>
+                {s}
+              </option>
+            ))}
+          </select>
+        </div>
+        <div>
+          <label htmlFor="draw-age-group" className="mb-1 block text-sm font-medium text-gray-700">
+            Age group
+          </label>
+          <select
+            id="draw-age-group"
+            value={ageGroupFilter}
+            onChange={(e) => setAgeGroupFilter(e.target.value)}
+            className="min-w-[120px]"
+          >
+            <option value="">All age groups</option>
+            {ageGroups.map((g) => (
+              <option key={g} value={g}>
+                {g}
+              </option>
+            ))}
+          </select>
+        </div>
       </div>
 
       {loadingDraw ? (
@@ -117,6 +163,11 @@ export default function DrawsPage() {
         </div>
       ) : (
         <div className="mt-10 overflow-x-auto">
+          {(eventFilter || standardFilter || ageGroupFilter) && (
+            <p className="mb-4 text-sm font-medium text-gray-700">
+              {[eventFilter, standardFilter, ageGroupFilter].filter(Boolean).join(" — ")}
+            </p>
+          )}
           <div className="flex gap-8 min-w-max pb-4">
             {roundOrder.map((r) => (
               <div key={r} className="flex flex-col gap-4">
