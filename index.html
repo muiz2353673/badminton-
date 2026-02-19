@@ -1,0 +1,742 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>North London Badminton Tournament — March 2026</title>
+  <meta name="description" content="North London badminton tournament, end of March 2026. 8 courts: Woodhouse & Wren. Age groups U11–U19 and Senior." />
+
+  <style>
+    :root{
+      /* BE-inspired: bold red + lots of white + dark text */
+      --brand:#e10613;          /* red accent */
+      --brand-dark:#b6040f;
+      --text:#101828;           /* near-black */
+      --muted:#475467;          /* slate */
+      --bg:#ffffff;
+      --bg-soft:#f6f7fb;        /* pale grey */
+      --border:#eaecf0;
+      --shadow: 0 10px 30px rgba(16,24,40,.08);
+      --radius: 14px;
+      --max: 1120px;
+    }
+
+    *{ box-sizing:border-box; }
+    html{ -webkit-text-size-adjust:100%; }
+    html,body{ height:100%; margin:0; }
+    body{
+      font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial;
+      color:var(--text);
+      background:var(--bg);
+      line-height:1.5;
+      padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
+    }
+    a{ color:inherit; text-decoration:none; }
+    .container{ max-width:var(--max); margin:0 auto; padding:0 20px; }
+    @media (max-width: 480px){
+      .container{ padding:0 16px; }
+    }
+
+    /* Top bar */
+    .topbar{
+      position:sticky; top:0; z-index:50;
+      background:#fff;
+      border-bottom:1px solid var(--border);
+    }
+    .topbar-inner{
+      display:flex; align-items:center; justify-content:space-between;
+      gap:12px;
+      padding:14px 0;
+    }
+    .brand{
+      display:flex; align-items:center; gap:10px;
+      font-weight:800;
+      letter-spacing:.2px;
+    }
+    .badge{
+      width:36px; height:36px;
+      border-radius:10px;
+      background:var(--brand);
+      display:grid; place-items:center;
+      color:#fff; font-weight:900;
+    }
+    nav{
+      display:flex; flex-wrap:wrap;
+      gap:10px;
+      align-items:center;
+      justify-content:flex-end;
+    }
+    .navlink{
+      padding:10px 12px;
+      min-height:44px;
+      display:inline-flex;
+      align-items:center;
+      border-radius:10px;
+      color:var(--muted);
+      font-weight:600;
+      font-size:14px;
+    }
+    .navlink:hover{ background:var(--bg-soft); color:var(--text); }
+    .navlink:active{ background:var(--bg-soft); }
+    .cta{
+      background:var(--brand);
+      color:#fff;
+      padding:12px 16px;
+      min-height:44px;
+      display:inline-flex;
+      align-items:center;
+      justify-content:center;
+      border-radius:12px;
+      font-weight:800;
+      font-size:14px;
+      box-shadow:0 8px 20px rgba(225,6,19,.18);
+    }
+    .cta:hover{ background:var(--brand-dark); }
+    .cta:active{ transform:scale(0.98); }
+
+    /* Hamburger menu */
+    .menu-toggle{
+      display:none;
+      width:44px;
+      height:44px;
+      padding:0;
+      border:none;
+      background:transparent;
+      cursor:pointer;
+      flex-direction:column;
+      justify-content:center;
+      align-items:center;
+      gap:6px;
+      border-radius:10px;
+    }
+    .menu-toggle:active{ background:var(--bg-soft); }
+    .menu-toggle span{
+      display:block;
+      width:22px;
+      height:2px;
+      background:var(--text);
+      border-radius:1px;
+      transition:transform .2s, opacity .2s;
+    }
+    .menu-toggle[aria-expanded="true"] span:nth-child(1){
+      transform:translateY(4px) rotate(45deg);
+    }
+    .menu-toggle[aria-expanded="true"] span:nth-child(2){ opacity:0; }
+    .menu-toggle[aria-expanded="true"] span:nth-child(3){
+      transform:translateY(-4px) rotate(-45deg);
+    }
+    .nav-dropdown{
+      display:none;
+      position:absolute;
+      top:100%;
+      left:0;
+      right:0;
+      background:#fff;
+      border-bottom:1px solid var(--border);
+      box-shadow:var(--shadow);
+      padding:12px;
+      flex-direction:column;
+      gap:4px;
+    }
+    .nav-dropdown.open{ display:flex; }
+    .nav-dropdown .navlink, .nav-dropdown .cta{
+      padding:14px 16px;
+      min-height:48px;
+      width:100%;
+      justify-content:flex-start;
+    }
+
+    /* Hero */
+    .hero{
+      background:
+        linear-gradient(180deg, rgba(225,6,19,.10), rgba(225,6,19,0) 55%),
+        var(--bg);
+      border-bottom:1px solid var(--border);
+    }
+    .hero-inner{
+      padding:34px 0 26px;
+      display:grid;
+      grid-template-columns: 1.2fr .8fr;
+      gap:22px;
+      align-items:stretch;
+    }
+    .kicker{
+      display:inline-flex;
+      align-items:center;
+      gap:10px;
+      padding:8px 12px;
+      border:1px solid rgba(225,6,19,.18);
+      background:rgba(225,6,19,.06);
+      border-radius:999px;
+      font-weight:800;
+      color:var(--brand-dark);
+      font-size:13px;
+    }
+    h1{
+      margin:14px 0 10px;
+      font-size:40px;
+      line-height:1.05;
+      letter-spacing:-.6px;
+    }
+    .sub{
+      color:var(--muted);
+      font-size:16px;
+      max-width:60ch;
+    }
+    .hero-actions{
+      display:flex; gap:12px; flex-wrap:wrap;
+      margin-top:18px;
+    }
+    .btn{
+      border:1px solid var(--border);
+      background:#fff;
+      padding:11px 14px;
+      border-radius:12px;
+      font-weight:800;
+      font-size:14px;
+      cursor:pointer;
+    }
+    .btn:hover{ background:var(--bg-soft); }
+    .btn-primary{
+      border-color:transparent;
+      background:var(--brand);
+      color:#fff;
+    }
+    .btn-primary:hover{ background:var(--brand-dark); }
+
+    .hero-card{
+      background:#fff;
+      border:1px solid var(--border);
+      border-radius:var(--radius);
+      box-shadow:var(--shadow);
+      padding:16px;
+      display:flex;
+      flex-direction:column;
+      justify-content:space-between;
+      gap:14px;
+    }
+    .hero-card h3{ margin:0; font-size:14px; color:var(--muted); text-transform:uppercase; letter-spacing:.08em; }
+    .facts{
+      display:grid;
+      grid-template-columns: 1fr 1fr;
+      gap:12px;
+    }
+    .fact{
+      border:1px solid var(--border);
+      background:var(--bg-soft);
+      border-radius:12px;
+      padding:12px;
+    }
+    .fact b{ display:block; font-size:15px; }
+    .fact span{ color:var(--muted); font-size:13px; }
+
+    /* Sections */
+    section{ padding:28px 0; }
+    .section-title{
+      display:flex; align-items:flex-end; justify-content:space-between;
+      gap:12px;
+      margin-bottom:14px;
+    }
+    .section-title h2{
+      margin:0;
+      font-size:22px;
+      letter-spacing:-.2px;
+    }
+    .section-title p{ margin:0; color:var(--muted); font-size:14px; }
+
+    .grid{
+      display:grid;
+      grid-template-columns: repeat(12, 1fr);
+      gap:16px;
+    }
+    .card{
+      grid-column: span 6;
+      background:#fff;
+      border:1px solid var(--border);
+      border-radius:var(--radius);
+      box-shadow:var(--shadow);
+      padding:16px;
+    }
+    .card h3{ margin:0 0 6px; font-size:16px; }
+    .card p{ margin:0; color:var(--muted); font-size:14px; }
+    .pillrow{ display:flex; flex-wrap:wrap; gap:8px; margin-top:12px; }
+    .pill{
+      font-size:12px;
+      font-weight:800;
+      border-radius:999px;
+      padding:7px 10px;
+      background:var(--bg-soft);
+      border:1px solid var(--border);
+      color:var(--muted);
+    }
+    .pill.red{
+      background:rgba(225,6,19,.08);
+      border-color:rgba(225,6,19,.18);
+      color:var(--brand-dark);
+    }
+
+    /* Registration */
+    .form-wrap{
+      grid-column: span 12;
+      background:var(--bg-soft);
+      border:1px solid var(--border);
+      border-radius:var(--radius);
+      padding:16px;
+      display:grid;
+      grid-template-columns: 1fr 1fr;
+      gap:14px;
+    }
+    label{ display:block; font-size:13px; font-weight:800; margin:0 0 6px; }
+    input, select, textarea{
+      width:100%;
+      border:1px solid var(--border);
+      border-radius:12px;
+      padding:12px 14px;
+      font-size:16px; /* 16px prevents iOS zoom on focus */
+      outline:none;
+      background:#fff;
+      min-height:48px;
+      -webkit-appearance:none;
+      appearance:none;
+    }
+    textarea{ min-height:100px; resize:vertical; }
+    input:focus, select:focus, textarea:focus{
+      border-color: rgba(225,6,19,.45);
+      box-shadow: 0 0 0 4px rgba(225,6,19,.10);
+    }
+    textarea{ min-height:92px; resize:vertical; }
+    .full{ grid-column: 1 / -1; }
+    .form-actions{
+      display:flex;
+      gap:10px;
+      align-items:center;
+      justify-content:space-between;
+      flex-wrap:wrap;
+      grid-column: 1 / -1;
+    }
+    .note{ color:var(--muted); font-size:13px; }
+    .status{
+      display:none;
+      border-radius:12px;
+      padding:12px;
+      border:1px solid var(--border);
+      background:#fff;
+      grid-column: 1 / -1;
+    }
+    .status.ok{
+      display:block;
+      border-color: rgba(16,185,129,.25);
+      background: rgba(16,185,129,.07);
+    }
+
+    /* Footer */
+    footer{
+      border-top:1px solid var(--border);
+      padding:18px 0;
+      color:var(--muted);
+      font-size:13px;
+    }
+
+    /* Responsive */
+    @media (max-width: 900px){
+      .hero-inner{ grid-template-columns: 1fr; gap:20px; padding:24px 0 20px; }
+      .card{ grid-column: span 12; }
+      .form-wrap{ grid-template-columns: 1fr; gap:16px; padding:20px; }
+      h1{ font-size:32px; line-height:1.15; }
+      .nav-dropdown{ display:none; flex-direction:column; align-items:stretch; }
+      .nav-dropdown.open{ display:flex; }
+      .menu-toggle{ display:flex; }
+      .topbar-inner{ position:relative; padding:12px 0; }
+      .section-title{ flex-direction:column; align-items:flex-start; gap:4px; }
+      .section-title h2{ font-size:20px; }
+      section{ padding:24px 0; }
+      .facts{ grid-template-columns: 1fr; }
+    }
+    @media (max-width: 600px){
+      h1{ font-size:28px; }
+      .kicker{ font-size:12px; padding:6px 10px; flex-wrap:wrap; }
+      .hero-actions{ flex-direction:column; }
+      .hero-actions .btn{ width:100%; justify-content:center; min-height:48px; }
+      .btn{ min-height:48px; padding:14px 16px; }
+      .form-wrap{ padding:16px; }
+    }
+    @media (max-width: 480px){
+      h1{ font-size:24px; }
+      .sub{ font-size:15px; }
+      .section-title h2{ font-size:18px; }
+      .card h3{ font-size:15px; }
+    }
+
+    /* Schedule: stack Sat/Sun on mobile */
+    @media (max-width: 600px){
+      .schedule-grid{ grid-template-columns: 1fr !important; }
+    }
+
+    /* Mobile sticky register */
+    .sticky{
+      position:fixed;
+      left:16px; right:16px;
+      bottom:max(14px, env(safe-area-inset-bottom));
+      display:none;
+      z-index:60;
+    }
+    .sticky .cta{
+      display:block; text-align:center;
+      padding:16px 20px; min-height:52px; font-size:16px;
+    }
+    @media (max-width: 900px){
+      .sticky{ display:block; left:16px; right:16px; }
+      body{ padding-bottom: max(80px, calc(68px + env(safe-area-inset-bottom))); }
+    }
+  </style>
+</head>
+
+<body>
+  <header class="topbar">
+    <div class="container topbar-inner">
+      <a class="brand" href="#top" aria-label="Barnet Badminton Club">
+        <div class="badge">BBC</div>
+        <div>
+          <div style="font-size:14px;">North London Tournament</div>
+          <div style="font-size:12px; color:var(--muted); font-weight:700;">March 2026</div>
+        </div>
+      </a>
+
+      <button class="menu-toggle" type="button" aria-label="Open menu" aria-expanded="false" aria-controls="navMenu">
+        <span></span><span></span><span></span>
+      </button>
+      <div class="nav-dropdown" id="navMenu" role="navigation" aria-label="Primary navigation">
+        <a class="navlink" href="#info">Tournament</a>
+        <a class="navlink" href="#categories">Categories</a>
+        <a class="navlink" href="#schedule">Schedule</a>
+        <a class="navlink" href="#venue">Venue</a>
+        <a class="cta" href="#register">Register</a>
+      </div>
+    </div>
+  </header>
+
+  <main id="top">
+    <div class="hero">
+      <div class="container hero-inner">
+        <div>
+          <div class="kicker">North London • 8 Courts • Woodhouse & Wren</div>
+          <h1>North London Tournament<br/>March 2026</h1>
+          <p class="sub">
+            Our first tournament — end of March 2026.
+            Singles, doubles and mixed across six age groups from U11 to Senior. Two venues, eight courts.</p>
+
+          <div class="hero-actions">
+            <a class="btn btn-primary" href="#register">Register now</a>
+            <a class="btn" href="#categories">View categories</a>
+            <a class="btn" href="#venue">Venue & travel</a>
+          </div>
+        </div>
+
+        <aside class="hero-card" aria-label="Key tournament info">
+          <div>
+            <h3>Quick info</h3>
+            <div class="facts" style="margin-top:10px;">
+              <div class="fact"><b>Dates</b><span>End of March 2026</span></div>
+              <div class="fact"><b>Location</b><span>North London (Woodhouse + Wren)</span></div>
+              <div class="fact"><b>Entries close</b><span>TBC – check back soon</span></div>
+              <div class="fact"><b>Courts</b><span>8 total (4 Woodhouse, 4 Wren)</span></div>
+            </div>
+          </div>
+          <div style="display:flex; gap:10px; flex-wrap:wrap;">
+            <span class="pill red">U11 • U13 • U15 • U17 • U19 • Senior</span>
+            <span class="pill">Singles • WD • XD (Woodhouse)</span>
+            <span class="pill">Men's Doubles (Wren)</span>
+          </div>
+        </aside>
+      </div>
+    </div>
+
+    <section id="info">
+      <div class="container">
+        <div class="section-title">
+          <h2>About the tournament</h2>
+          <p>Our first North London tournament — format and full details coming soon.</p>
+        </div>
+        <div class="grid">
+          <div class="card">
+            <h3>Format</h3>
+            <p>Group stage then knockout. Best of 3 games, 21 rally points. Age groups: U11, U13, U15, U17, U19 and Senior (21+).</p>
+            <div class="pillrow">
+              <span class="pill">Best of 3</span>
+              <span class="pill">21 rally points</span>
+              <span class="pill">Umpired finals</span>
+            </div>
+          </div>
+          <div class="card">
+            <h3>Age groups</h3>
+            <p>U11, U13, U15, U17, U19 and Senior (21+). Players compete in their age group for singles, doubles and mixed doubles.</p>
+            <div class="pillrow">
+              <span class="pill red">U11 • U13 • U15</span>
+              <span class="pill red">U17 • U19 • Senior</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section id="categories" style="background:var(--bg-soft); border-top:1px solid var(--border); border-bottom:1px solid var(--border);">
+      <div class="container">
+        <div class="section-title">
+          <h2>Categories & venues</h2>
+          <p>Age groups: U11, U13, U15, U17, U19, Senior (21+). Entry fees TBC.</p>
+        </div>
+
+        <div class="grid">
+          <div class="card">
+            <h3>Woodhouse (4 courts)</h3>
+            <p><b>Singles</b> — all age groups. Boys &amp; girls singles, men's &amp; women's singles.</p>
+            <div class="pillrow"><span class="pill red">Woodhouse</span><span class="pill">U11–Senior</span></div>
+          </div>
+          <div class="card">
+            <h3>Woodhouse (4 courts)</h3>
+            <p><b>Women's Doubles &amp; Mixed Doubles</b> — all age groups.</p>
+            <div class="pillrow"><span class="pill red">WD • XD</span><span class="pill">Woodhouse</span></div>
+          </div>
+          <div class="card">
+            <h3>Wren (4 courts)</h3>
+            <p><b>Men's Doubles</b> — all age groups. Boys doubles, men's doubles.</p>
+            <div class="pillrow"><span class="pill red">Wren</span><span class="pill">MD</span></div>
+          </div>
+          <div class="card">
+            <h3>Age groups</h3>
+            <p>U11, U13, U15, U17, U19 and Senior (21+). Players enter in their age category.</p>
+            <div class="pillrow"><span class="pill red">U11 • U13 • U15</span><span class="pill red">U17 • U19 • Senior</span></div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section id="schedule">
+      <div class="container">
+        <div class="section-title">
+          <h2>Schedule</h2>
+          <p>End of March 2026 — times TBC when draws are confirmed.</p>
+        </div>
+
+        <div class="grid">
+          <div class="card" style="grid-column:span 12;">
+            <div class="schedule-grid" style="display:grid; grid-template-columns: 1fr 1fr; gap:14px;">
+              <div style="border:1px solid var(--border); border-radius:12px; padding:14px;">
+                <b>Woodhouse (4 courts)</b>
+                <div style="color:var(--muted); font-size:14px; margin-top:6px;">
+                  Singles (all age groups)<br/>
+                  Women's Doubles<br/>
+                  Mixed Doubles
+                </div>
+              </div>
+              <div style="border:1px solid var(--border); border-radius:12px; padding:14px;">
+                <b>Wren (4 courts)</b>
+                <div style="color:var(--muted); font-size:14px; margin-top:6px;">
+                  Men's Doubles (all age groups)<br/>
+                  Boys doubles, men's doubles
+                </div>
+              </div>
+            </div>
+
+            <div class="pillrow" style="margin-top:14px;">
+              <span class="pill">8 courts total</span>
+              <span class="pill">North London</span>
+              <span class="pill red">End of March 2026</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section id="venue" style="background:var(--bg-soft); border-top:1px solid var(--border); border-bottom:1px solid var(--border);">
+      <div class="container">
+        <div class="section-title">
+          <h2>Venues</h2>
+          <p>Two venues in North London — 4 courts each.</p>
+        </div>
+
+        <div class="grid">
+          <div class="card">
+            <h3>Woodhouse (4 courts)</h3>
+            <p><b>Singles, Women's Doubles, Mixed Doubles</b></p>
+            <p style="margin-top:8px; color:var(--muted);">Address TBC — North London</p>
+            <div class="pillrow">
+              <span class="pill red">4 courts</span>
+              <span class="pill">Changing rooms</span>
+            </div>
+          </div>
+          <div class="card">
+            <h3>Wren (4 courts)</h3>
+            <p><b>Men's Doubles</b></p>
+            <p style="margin-top:8px; color:var(--muted);">Address TBC — North London</p>
+            <div class="pillrow">
+              <span class="pill red">4 courts</span>
+              <span class="pill">Changing rooms</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section id="register">
+      <div class="container">
+        <div class="section-title">
+          <h2>Register</h2>
+          <p>Enter your details and choose your age group and event. Submissions go to Google Sheets (or locally if not configured).</p>
+        </div>
+
+        <div class="grid">
+          <form class="form-wrap" id="regForm">
+            <div class="status" id="statusBox" role="status" aria-live="polite"></div>
+
+            <div>
+              <label for="fullName">Full name *</label>
+              <input id="fullName" name="fullName" required placeholder="e.g., Abdul Muiz Munshi" />
+            </div>
+
+            <div>
+              <label for="email">Email *</label>
+              <input id="email" name="email" type="email" required placeholder="name@example.com" />
+            </div>
+
+            <div>
+              <label for="phone">Phone</label>
+              <input id="phone" name="phone" placeholder="07..." />
+            </div>
+
+            <div>
+              <label for="ageGroup">Age group *</label>
+              <select id="ageGroup" name="ageGroup" required>
+                <option value="" selected disabled>Select…</option>
+                <option>U11</option>
+                <option>U13</option>
+                <option>U15</option>
+                <option>U17</option>
+                <option>U19</option>
+                <option>Senior (21+)</option>
+              </select>
+            </div>
+            <div>
+              <label for="category">Event *</label>
+              <select id="category" name="category" required>
+                <option value="" selected disabled>Select…</option>
+                <option>Singles (Woodhouse)</option>
+                <option>Women's Doubles (Woodhouse)</option>
+                <option>Mixed Doubles (Woodhouse)</option>
+                <option>Men's Doubles (Wren)</option>
+              </select>
+            </div>
+
+            <div>
+              <label for="partner">Partner name (if doubles)</label>
+              <input id="partner" name="partner" placeholder="Leave blank if singles" />
+            </div>
+
+            <div>
+              <label for="standard">Standard</label>
+              <select id="standard" name="standard">
+                <option>Recreational</option>
+                <option>League (Div 4–6)</option>
+                <option>League (Div 1–3)</option>
+                <option>County / Performance</option>
+              </select>
+            </div>
+
+            <div class="full">
+              <label for="notes">Notes</label>
+              <textarea id="notes" name="notes" placeholder="Any injuries, preferred time slots, etc."></textarea>
+            </div>
+
+            <div class="form-actions">
+              <button class="btn btn-primary" type="submit">Submit registration</button>
+              <span class="note">Demo only — no payment collected.</span>
+            </div>
+          </form>
+        </div>
+      </div>
+    </section>
+
+    <footer>
+      <div class="container" style="display:flex; justify-content:space-between; gap:12px; flex-wrap:wrap;">
+        <div>© <span id="year"></span> North London Badminton Tournament</div>
+        <div style="display:flex; gap:12px; flex-wrap:wrap;">
+          <a class="navlink" href="#top">Back to top</a>
+          <a class="navlink" href="#register">Register</a>
+        </div>
+      </div>
+    </footer>
+
+    <div class="sticky">
+      <a class="cta" href="#register">Register</a>
+    </div>
+  </main>
+
+  <script>
+    // Google Sheets: paste your Web app URL from Apps Script deploy (see GOOGLE_SHEETS_PLAN.md)
+    const GOOGLE_SCRIPT_URL = '';  // e.g. 'https://script.google.com/macros/s/xxxxx/exec'
+
+    const form = document.getElementById("regForm");
+    const statusBox = document.getElementById("statusBox");
+    document.getElementById("year").textContent = new Date().getFullYear();
+
+    function showStatus(ok, msg) {
+      statusBox.className = 'status ' + (ok ? 'ok' : '');
+      statusBox.textContent = msg;
+      statusBox.style.display = 'block';
+      if (ok) form.reset();
+      var standardEl = document.getElementById("standard");
+      if (standardEl) standardEl.value = "Recreational";
+      var submitBtn = form.querySelector('button[type="submit"]');
+      if (submitBtn) { submitBtn.disabled = false; submitBtn.textContent = "Submit registration"; }
+      window.setTimeout(() => statusBox.scrollIntoView({ behavior: "smooth", block: "center" }), 50);
+    }
+
+    form.addEventListener("submit", async (e) => {
+      e.preventDefault();
+
+      const submitBtn = form.querySelector('button[type="submit"]');
+      submitBtn.disabled = true;
+      submitBtn.textContent = "Submitting…";
+
+      const fd = new FormData(form);
+      const data = {
+        fullName: fd.get("fullName"),
+        email: fd.get("email"),
+        phone: fd.get("phone"),
+        ageGroup: fd.get("ageGroup"),
+        category: fd.get("category"),
+        partner: fd.get("partner"),
+        standard: fd.get("standard"),
+        notes: fd.get("notes")
+      };
+
+      if (GOOGLE_SCRIPT_URL) {
+        try {
+          const res = await fetch(GOOGLE_SCRIPT_URL, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(data)
+          });
+          const json = await res.json();
+          if (json.success) {
+            showStatus(true, "Registration submitted. Thank you!");
+          } else {
+            showStatus(false, "Something went wrong. Please try again or contact us.");
+          }
+        } catch (err) {
+          showStatus(false, "Could not reach server. Please try again or contact us.");
+        }
+      } else {
+        try {
+          const subs = JSON.parse(localStorage.getItem("north_london_tournament_submissions") || "[]");
+          subs.unshift({ ...data, submittedAt: new Date().toISOString() });
+          localStorage.setItem("north_london_tournament_submissions", JSON.stringify(subs));
+          showStatus(true, "Demo: saved locally. Add GOOGLE_SCRIPT_URL to save to Sheets.");
+        } catch (err) {
+          showStatus(false, "Could not save. Please try again.");
+        }
+      }
+    });
+  </script>
+</body>
+</html>
