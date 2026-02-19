@@ -6,6 +6,10 @@ import { supabase } from "@/lib/supabase";
 import {
   generateBracket,
   getDraws,
+  listGroups,
+  createGroup,
+  deleteGroup,
+  generateRoundRobin,
   updateRegistration,
   deleteRegistration,
   updateMatch,
@@ -13,7 +17,7 @@ import {
   type RegistrationUpdate,
   type MatchUpdate,
 } from "@/lib/api";
-import type { Registration, Tournament } from "@/lib/supabase";
+import type { Group, Registration, Tournament } from "@/lib/supabase";
 import type { Match } from "@/lib/supabase";
 
 const EVENTS = [
@@ -38,6 +42,14 @@ export default function AdminPage() {
   const [drawAgeGroup, setDrawAgeGroup] = useState(AGE_GROUPS[0]);
   const [drawMessage, setDrawMessage] = useState<{ ok: boolean; text: string } | null>(null);
   const [drawLoading, setDrawLoading] = useState(false);
+
+  const [rrGroups, setRrGroups] = useState<Group[]>([]);
+  const [rrGroupsLoading, setRrGroupsLoading] = useState(false);
+  const [newGroupName, setNewGroupName] = useState("");
+  const [rrCreateLoading, setRrCreateLoading] = useState(false);
+  const [rrGenLoading, setRrGenLoading] = useState(false);
+  const [rrMessage, setRrMessage] = useState<{ ok: boolean; text: string } | null>(null);
+  const [assigningGroupRegId, setAssigningGroupRegId] = useState<string | null>(null);
 
   const [editingRegistration, setEditingRegistration] = useState<Registration | null>(null);
   const [editRegSaving, setEditRegSaving] = useState(false);
@@ -94,6 +106,15 @@ export default function AdminPage() {
     })();
   }, [drawTournamentId, manageTournamentId]);
 
+  useEffect(() => {
+    if (!drawTournamentId || !drawEvent) return;
+    setRrGroupsLoading(true);
+    listGroups(drawTournamentId, drawEvent, drawStandard || undefined, drawAgeGroup || undefined)
+      .then((d) => setRrGroups(d.groups))
+      .catch(() => setRrGroups([]))
+      .finally(() => setRrGroupsLoading(false));
+  }, [drawTournamentId, drawEvent, drawStandard, drawAgeGroup]);
+
   async function handleGenerateDraw() {
     if (!drawTournamentId || !drawEvent || !drawStandard || !drawAgeGroup) return;
     setDrawMessage(null);
@@ -115,6 +136,65 @@ export default function AdminPage() {
       setDrawLoading(false);
     }
   }
+
+  async function handleCreateGroup() {
+    const name = newGroupName.trim() || `Group ${rrGroups.length + 1}`;
+    if (!drawTournamentId || !drawEvent) return;
+    setRrCreateLoading(true);
+    setRrMessage(null);
+    try {
+      const { group } = await createGroup(drawTournamentId, drawEvent, name, drawStandard || null, drawAgeGroup || null);
+      setRrGroups((prev) => [...prev, group]);
+      setNewGroupName("");
+    } catch (e) {
+      setRrMessage({ ok: false, text: e instanceof Error ? e.message : "Failed to create group." });
+    } finally {
+      setRrCreateLoading(false);
+    }
+  }
+
+  async function handleAssignGroup(regId: string, groupId: string | null) {
+    setAssigningGroupRegId(regId);
+    try {
+      await updateRegistration(regId, { group_id: groupId });
+      setRegistrations((prev) => prev.map((r) => (r.id === regId ? { ...r, group_id: groupId } : r)));
+    } finally {
+      setAssigningGroupRegId(null);
+    }
+  }
+
+  async function handleDeleteRrGroup(groupId: string) {
+    try {
+      await deleteGroup(groupId);
+      setRrGroups((prev) => prev.filter((g) => g.id !== groupId));
+      setRegistrations((prev) => prev.map((r) => (r.group_id === groupId ? { ...r, group_id: null } : r)));
+    } catch (e) {
+      setRrMessage({ ok: false, text: e instanceof Error ? e.message : "Failed to delete group." });
+    }
+  }
+
+  async function handleGenerateRoundRobin() {
+    if (!drawTournamentId || !drawEvent) return;
+    setRrGenLoading(true);
+    setRrMessage(null);
+    try {
+      const res = await generateRoundRobin(drawTournamentId, drawEvent, drawStandard || null, drawAgeGroup || null);
+      setRrMessage({ ok: true, text: `Round-robin: ${res.matches_created} matches in ${res.groups_processed} groups. View on the Draws page.` });
+      if (manageTournamentId === drawTournamentId) {
+        setManageEvent(drawEvent);
+        setManageStandard(drawStandard);
+        setManageAgeGroup(drawAgeGroup);
+      }
+    } catch (e) {
+      setRrMessage({ ok: false, text: e instanceof Error ? e.message : "Failed to generate round-robin." });
+    } finally {
+      setRrGenLoading(false);
+    }
+  }
+
+  const rrRegistrations = registrations.filter(
+    (r) => r.tournament_id === drawTournamentId && r.event === drawEvent && r.standard === drawStandard && r.age_group === drawAgeGroup
+  );
 
   async function handleSaveRegistration() {
     if (!editingRegistration) return;
@@ -295,6 +375,74 @@ export default function AdminPage() {
         {drawMessage && (
           <div className={`mt-3 rounded-lg border p-3 text-sm ${drawMessage.ok ? "border-green-200 bg-green-50 text-green-800" : "border-red-200 bg-red-50 text-red-800"}`}>
             {drawMessage.text}
+          </div>
+        )}
+      </section>
+
+      <section className="mt-10">
+        <h2 className="text-lg font-semibold text-gray-900">Round-robin draw</h2>
+        <p className="mt-1 text-sm text-gray-600">Create groups, assign players to groups, then generate round-robin matches (everyone plays everyone in each group). Use the same tournament/event/standard/age group filters above.</p>
+        <div className="mt-4 flex flex-wrap items-end gap-3">
+          <div>
+            <label className="mb-1 block text-sm font-medium text-gray-700">New group name</label>
+            <input
+              type="text"
+              placeholder="e.g. Group A"
+              value={newGroupName}
+              onChange={(e) => setNewGroupName(e.target.value)}
+              className="min-w-[140px]"
+            />
+          </div>
+          <button type="button" onClick={handleCreateGroup} disabled={rrCreateLoading || !drawTournamentId || !drawEvent} className="btn-primary">
+            {rrCreateLoading ? "Creating…" : "Create group"}
+          </button>
+        </div>
+        {rrGroupsLoading ? (
+          <p className="mt-3 text-sm text-gray-500">Loading groups…</p>
+        ) : rrGroups.length > 0 ? (
+          <div className="mt-3 flex flex-wrap gap-2">
+            {rrGroups.map((g) => (
+              <span key={g.id} className="inline-flex items-center gap-1 rounded-full bg-brand-light px-3 py-1 text-sm font-medium text-brand">
+                {g.name}
+                <button type="button" onClick={() => handleDeleteRrGroup(g.id)} className="ml-1 rounded hover:bg-brand/20" aria-label={`Delete ${g.name}`}>×</button>
+              </span>
+            ))}
+          </div>
+        ) : null}
+        <div className="mt-4">
+          <h3 className="text-sm font-medium text-gray-700">Assign players to groups</h3>
+          <p className="mt-1 text-xs text-gray-500">Select a group for each player. Then click &quot;Generate round-robin matches&quot;.</p>
+          {rrRegistrations.length === 0 ? (
+            <p className="mt-2 text-sm text-gray-500">No registrations for this event + standard + age group. Register players first.</p>
+          ) : (
+            <ul className="mt-2 space-y-2">
+              {rrRegistrations.map((r) => (
+                <li key={r.id} className="flex flex-wrap items-center gap-2">
+                  <span className="font-medium text-gray-900">{r.full_name}</span>
+                  <select
+                    value={r.group_id ?? ""}
+                    onChange={(e) => handleAssignGroup(r.id, e.target.value || null)}
+                    disabled={assigningGroupRegId === r.id}
+                    className="rounded border border-gray-300 text-sm"
+                  >
+                    <option value="">Unassigned</option>
+                    {rrGroups.map((g) => (
+                      <option key={g.id} value={g.id}>{g.name}</option>
+                    ))}
+                  </select>
+                </li>
+              ))}
+            </ul>
+          )}
+        </div>
+        <div className="mt-4">
+          <button type="button" onClick={handleGenerateRoundRobin} disabled={rrGenLoading || !drawTournamentId || !drawEvent || rrGroups.length === 0} className="btn-primary">
+            {rrGenLoading ? "Generating…" : "Generate round-robin matches"}
+          </button>
+        </div>
+        {rrMessage && (
+          <div className={`mt-3 rounded-lg border p-3 text-sm ${rrMessage.ok ? "border-green-200 bg-green-50 text-green-800" : "border-red-200 bg-red-50 text-red-800"}`}>
+            {rrMessage.text}
           </div>
         )}
       </section>

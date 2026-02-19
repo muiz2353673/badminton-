@@ -3,8 +3,7 @@
 import { useEffect, useState } from "react";
 import { supabase } from "@/lib/supabase";
 import { getDraws } from "@/lib/api";
-import type { Match } from "@/lib/supabase";
-import type { Tournament } from "@/lib/supabase";
+import type { Group, Match, Tournament } from "@/lib/supabase";
 
 export default function DrawsPage() {
   const [tournaments, setTournaments] = useState<Tournament[]>([]);
@@ -15,6 +14,7 @@ export default function DrawsPage() {
   const [events, setEvents] = useState<string[]>([]);
   const [standards, setStandards] = useState<string[]>([]);
   const [ageGroups, setAgeGroups] = useState<string[]>([]);
+  const [groups, setGroups] = useState<Group[]>([]);
   const [matches, setMatches] = useState<Match[]>([]);
   const [loading, setLoading] = useState(true);
   const [loadingDraw, setLoadingDraw] = useState(false);
@@ -43,6 +43,7 @@ export default function DrawsPage() {
     getDraws(tournamentId, eventFilter || undefined, standardFilter || undefined, ageGroupFilter || undefined)
       .then((d) => {
         setMatches(d.matches);
+        setGroups(d.groups ?? []);
         setEvents(d.events);
         setStandards(d.standards ?? []);
         setAgeGroups(d.age_groups ?? []);
@@ -62,6 +63,7 @@ export default function DrawsPage() {
   }, [tournamentId, eventFilter, standardFilter, ageGroupFilter, retryCount]);
 
   const byRound = matches.reduce<Record<number, Match[]>>((acc, m) => {
+    if (m.group_id) return acc;
     const r = m.round_order ?? 0;
     if (!acc[r]) acc[r] = [];
     acc[r].push(m);
@@ -71,6 +73,27 @@ export default function DrawsPage() {
   const roundOrder = Object.keys(byRound)
     .map(Number)
     .sort((a, b) => a - b);
+
+  const matchesByGroup = groups.map((g) => ({ group: g, matches: matches.filter((m) => m.group_id === g.id) })).filter((x) => x.matches.length > 0);
+
+  function standingsForMatches(groupMatches: Match[]): { id: string; name: string; wins: number }[] {
+    const wins: Record<string, number> = {};
+    const names: Record<string, string> = {};
+    groupMatches.forEach((m) => {
+      if (m.player1_id) {
+        wins[m.player1_id] = (wins[m.player1_id] ?? 0) + 0;
+        names[m.player1_id] = m.player1_name ?? "—";
+      }
+      if (m.player2_id) {
+        wins[m.player2_id] = (wins[m.player2_id] ?? 0) + 0;
+        names[m.player2_id] = m.player2_name ?? "—";
+      }
+      if (m.status === "completed" && m.winner_id) wins[m.winner_id] = (wins[m.winner_id] ?? 0) + 1;
+    });
+    return Object.entries(wins)
+      .map(([id, w]) => ({ id, name: names[id] ?? "—", wins: w }))
+      .sort((a, b) => b.wins - a.wins);
+  }
 
   if (loading) {
     return (
@@ -188,57 +211,97 @@ export default function DrawsPage() {
         <div className="card mt-10 text-center">
           <p className="text-gray-600">No draw yet for this selection.</p>
           <p className="mt-2 text-sm text-gray-500">
-            Generate a bracket from the Admin page, then refresh.
+            Create groups and assign players in Admin (round-robin), or generate an elimination bracket, then refresh.
           </p>
         </div>
       ) : (
-        <div className="mt-10 overflow-x-auto">
+        <div className="mt-10 space-y-10">
           {(eventFilter || standardFilter || ageGroupFilter) && (
-            <p className="mb-4 text-sm font-medium text-gray-700">
+            <p className="text-sm font-medium text-gray-700">
               {[eventFilter, standardFilter, ageGroupFilter].filter(Boolean).join(" — ")}
             </p>
           )}
-          <div className="flex gap-8 min-w-max pb-4">
-            {roundOrder.map((r) => (
-              <div key={r} className="flex flex-col gap-4">
-                <h2 className="text-sm font-semibold uppercase tracking-wider text-gray-500 sticky top-0 bg-gray-50 py-1">
-                  {byRound[r][0]?.round ?? `Round ${r}`}
-                </h2>
-                <div
-                  className="flex flex-col gap-2"
-                  style={{
-                    minHeight: roundOrder.length > 1 ? `${Math.max(120 * (byRound[r].length || 1), 80)}px` : undefined,
-                  }}
-                >
-                  {byRound[r].map((m) => (
-                    <div
-                      key={m.id}
-                      className="card min-w-[200px] border-brand/20 bg-white py-2 px-3"
-                    >
-                      <div className="flex items-center justify-between gap-2 text-sm">
-                        <span className={m.winner_id === m.player1_id ? "font-semibold text-gray-900" : "text-gray-600"}>
-                          {m.player1_name ?? "—"}
-                        </span>
-                        {(m.score1 != null || m.score2 != null) && (
-                          <span className="shrink-0 font-mono text-gray-700">
-                            {m.score1 ?? "–"}–{m.score2 ?? "–"}
-                          </span>
-                        )}
+
+          {matchesByGroup.length > 0 && (
+            <div className="space-y-8">
+              <h2 className="text-base font-semibold text-gray-900">Round-robin groups</h2>
+              {matchesByGroup.map(({ group, matches: groupMatches }) => {
+                const standings = standingsForMatches(groupMatches);
+                return (
+                  <div key={group.id} className="card">
+                    <h3 className="text-sm font-semibold uppercase tracking-wider text-brand">{group.name}</h3>
+                    {standings.length > 0 && (
+                      <div className="mt-3 overflow-x-auto">
+                        <table className="min-w-full text-sm">
+                          <thead>
+                            <tr className="border-b border-gray-200 text-left text-gray-500">
+                              <th className="pb-2 pr-4">Player</th>
+                              <th className="pb-2">Wins</th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            {standings.map((s) => (
+                              <tr key={s.id} className="border-b border-gray-100">
+                                <td className="py-1.5 pr-4 font-medium text-gray-900">{s.name}</td>
+                                <td className="py-1.5 text-gray-600">{s.wins}</td>
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
                       </div>
-                      <div className="mt-0.5 flex items-center justify-between gap-2 text-sm">
-                        <span className={m.winner_id === m.player2_id ? "font-semibold text-gray-900" : "text-gray-600"}>
-                          {m.player2_name ?? "—"}
-                        </span>
-                        {m.status === "completed" && m.winner_name && (
-                          <span className="text-xs text-green-700">Winner</span>
-                        )}
-                      </div>
+                    )}
+                    <div className="mt-4 grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
+                      {groupMatches.map((m) => (
+                        <div key={m.id} className="rounded-lg border border-gray-200 bg-gray-50/50 px-3 py-2 text-sm">
+                          <div className="flex items-center justify-between gap-2">
+                            <span className={m.winner_id === m.player1_id ? "font-semibold text-gray-900" : "text-gray-600"}>{m.player1_name ?? "—"}</span>
+                            {(m.score1 != null || m.score2 != null) && (
+                              <span className="font-mono text-gray-700">{m.score1 ?? "–"}–{m.score2 ?? "–"}</span>
+                            )}
+                          </div>
+                          <div className="flex items-center justify-between gap-2">
+                            <span className={m.winner_id === m.player2_id ? "font-semibold text-gray-900" : "text-gray-600"}>{m.player2_name ?? "—"}</span>
+                            {m.status === "completed" && <span className="text-xs text-green-700">Done</span>}
+                          </div>
+                        </div>
+                      ))}
                     </div>
-                  ))}
-                </div>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+
+          {roundOrder.length > 0 && (
+            <div className="overflow-x-auto">
+              <h2 className="mb-4 text-base font-semibold text-gray-900">Elimination bracket</h2>
+              <div className="flex gap-8 min-w-max pb-4">
+                {roundOrder.map((r) => (
+                  <div key={r} className="flex flex-col gap-4">
+                    <h3 className="text-sm font-semibold uppercase tracking-wider text-gray-500 sticky top-0 bg-gray-50 py-1">
+                      {byRound[r][0]?.round ?? `Round ${r}`}
+                    </h3>
+                    <div className="flex flex-col gap-2">
+                      {byRound[r].map((m) => (
+                        <div key={m.id} className="card min-w-[200px] border-brand/20 bg-white py-2 px-3">
+                          <div className="flex items-center justify-between gap-2 text-sm">
+                            <span className={m.winner_id === m.player1_id ? "font-semibold text-gray-900" : "text-gray-600"}>{m.player1_name ?? "—"}</span>
+                            {(m.score1 != null || m.score2 != null) && (
+                              <span className="shrink-0 font-mono text-gray-700">{m.score1 ?? "–"}–{m.score2 ?? "–"}</span>
+                            )}
+                          </div>
+                          <div className="mt-0.5 flex items-center justify-between gap-2 text-sm">
+                            <span className={m.winner_id === m.player2_id ? "font-semibold text-gray-900" : "text-gray-600"}>{m.player2_name ?? "—"}</span>
+                            {m.status === "completed" && m.winner_name && <span className="text-xs text-green-700">Winner</span>}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                ))}
               </div>
-            ))}
-          </div>
+            </div>
+          )}
         </div>
       )}
     </div>

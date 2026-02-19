@@ -24,6 +24,18 @@ create table if not exists public.venues (
   created_at timestamptz default now()
 );
 
+-- Groups (round-robin: admin assigns players to groups, then generates matches per group)
+create table if not exists public.groups (
+  id uuid primary key default gen_random_uuid(),
+  tournament_id uuid not null references public.tournaments(id) on delete cascade,
+  event text not null,
+  standard text,
+  age_group text,
+  name text not null,
+  sort_order int default 0,
+  created_at timestamptz default now()
+);
+
 -- Registrations (players per tournament + event)
 create table if not exists public.registrations (
   id uuid primary key default gen_random_uuid(),
@@ -36,6 +48,7 @@ create table if not exists public.registrations (
   partner_name text,
   standard text,
   notes text,
+  group_id uuid references public.groups(id) on delete set null,
   created_at timestamptz default now(),
   unique(tournament_id, email, event)
 );
@@ -50,6 +63,7 @@ create table if not exists public.matches (
   age_group text,
   round_order int,
   slot_in_round int,
+  group_id uuid references public.groups(id) on delete set null,
   player1_id uuid references public.registrations(id) on delete set null,
   player2_id uuid references public.registrations(id) on delete set null,
   score1 int,
@@ -64,8 +78,12 @@ create table if not exists public.matches (
 -- Enable RLS (optional; allow anon for demo, tighten later)
 alter table public.tournaments enable row level security;
 alter table public.venues enable row level security;
+alter table public.groups enable row level security;
 alter table public.registrations enable row level security;
 alter table public.matches enable row level security;
+
+drop policy if exists "Allow public read groups" on public.groups;
+create policy "Allow public read groups" on public.groups for select using (true);
 
 -- Allow read for all (public site) – drop first so re-run is safe
 drop policy if exists "Allow public read tournaments" on public.tournaments;

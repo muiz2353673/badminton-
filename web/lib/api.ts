@@ -39,12 +39,83 @@ export async function generateBracket(tournamentId: string, event: string, stand
   return res.json();
 }
 
+// Round-robin: groups and generate matches
+export type Group = import("./supabase").Group;
+
+export async function listGroups(
+  tournamentId: string,
+  event?: string,
+  standard?: string,
+  ageGroup?: string
+): Promise<{ groups: Group[] }> {
+  const params = new URLSearchParams({ tournament_id: tournamentId });
+  if (event) params.set("event", event);
+  if (standard) params.set("standard", standard);
+  if (ageGroup) params.set("age_group", ageGroup);
+  const res = await fetchWithTimeout(`${API_URL}/groups?${params}`);
+  if (!res.ok) throw new Error("Failed to load groups");
+  return res.json();
+}
+
+export async function createGroup(
+  tournamentId: string,
+  event: string,
+  name: string,
+  standard?: string | null,
+  ageGroup?: string | null
+): Promise<{ message: string; group: Group }> {
+  const res = await fetchWithTimeout(`${API_URL}/groups`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ tournament_id: tournamentId, event, standard: standard ?? null, age_group: ageGroup ?? null, name }),
+  });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({ detail: res.statusText }));
+    throw new Error(err.detail || "Failed to create group");
+  }
+  return res.json();
+}
+
+export async function updateGroup(groupId: string, data: { name?: string; sort_order?: number }): Promise<{ message: string; group: Group }> {
+  const res = await fetchWithTimeout(`${API_URL}/groups/${groupId}`, {
+    method: "PATCH",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(data),
+  });
+  if (!res.ok) throw new Error("Failed to update group");
+  return res.json();
+}
+
+export async function deleteGroup(groupId: string): Promise<{ message: string; id: string }> {
+  const res = await fetchWithTimeout(`${API_URL}/groups/${groupId}`, { method: "DELETE" });
+  if (!res.ok) throw new Error("Failed to delete group");
+  return res.json();
+}
+
+export async function generateRoundRobin(
+  tournamentId: string,
+  event: string,
+  standard?: string | null,
+  ageGroup?: string | null
+): Promise<{ message: string; matches_created: number; groups_processed: number }> {
+  const res = await fetchWithTimeout(`${API_URL}/generate-round-robin`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ tournament_id: tournamentId, event, standard: standard ?? null, age_group: ageGroup ?? null }),
+  });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({ detail: res.statusText }));
+    throw new Error(err.detail || "Failed to generate round-robin");
+  }
+  return res.json();
+}
+
 export async function getDraws(
   tournamentId: string,
   event?: string,
   standard?: string,
   ageGroup?: string
-): Promise<{ tournament_id: string; event_filter: string | null; standard_filter: string | null; age_group_filter: string | null; events: string[]; standards: string[]; age_groups: string[]; matches: import("./supabase").Match[] }> {
+): Promise<{ tournament_id: string; event_filter: string | null; standard_filter: string | null; age_group_filter: string | null; events: string[]; standards: string[]; age_groups: string[]; groups: import("./supabase").Group[]; matches: import("./supabase").Match[] }> {
   const params = new URLSearchParams({ tournament_id: tournamentId });
   if (event) params.set("event", event);
   if (standard) params.set("standard", standard);
@@ -64,6 +135,7 @@ export type RegistrationUpdate = {
   standard?: string | null;
   partner_name?: string | null;
   notes?: string | null;
+  group_id?: string | null;
 };
 
 export type MatchUpdate = {

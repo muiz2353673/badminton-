@@ -5,6 +5,16 @@ const anonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
 
 export const supabase = createClient(url, anonKey);
 
+export type Group = {
+  id: string;
+  tournament_id: string;
+  event: string;
+  standard: string | null;
+  age_group: string | null;
+  name: string;
+  sort_order: number;
+};
+
 export type Registration = {
   id: string;
   tournament_id: string;
@@ -16,6 +26,7 @@ export type Registration = {
   partner_name: string | null;
   standard: string | null;
   notes: string | null;
+  group_id: string | null;
   created_at: string;
 };
 
@@ -37,6 +48,7 @@ export type Match = {
   event: string;
   standard?: string | null;
   age_group?: string | null;
+  group_id?: string | null;
   round_order?: number | null;
   slot_in_round?: number | null;
   player1_id: string | null;
